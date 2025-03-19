@@ -1,0 +1,11 @@
+/.gradle
+/gradle
+/.gradle
+*.properties
+/toi-client/node_modules
+*.md
+/.gradle
+/.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content/using-npm
+/.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content
+.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content/using-npm/scripts.md
+/toi-client/node_modules

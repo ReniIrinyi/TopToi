@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  toi-api:
+    build: ./toi-api
+    container_name: toi-api-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - KTOR_ENV=prod
+    depends_on:
+      - toi-client
+
+  toi-client:
+    build: ./toi-client
+    container_name: toi-client-frontend
+    ports:
+      - "3000:3000"
