@@ -9,3 +9,5 @@
 /.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content
 .gradle/npm/npm-v9.0.0/node_modules/npm/docs/content/using-npm/scripts.md
 /toi-client/node_modules
+*.ps1
+/toi-client/.gradle
