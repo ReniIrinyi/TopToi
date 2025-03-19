@@ -11,3 +11,10 @@
 /toi-client/node_modules
 *.ps1
 /toi-client/.gradle
+/.gradle
+/.gradle
+/.gradle/8.8/executionHistory
+.gradle/8.8/checksums/checksums.lock
+.gradle/8.8/executionHistory/executionHistory.lock
+.gradle/buildOutputCleanup/buildOutputCleanup.lock
+.gradle/8.8/fileHashes/fileHashes.lock
