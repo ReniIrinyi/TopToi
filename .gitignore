@@ -1,10 +1,10 @@
 /.gradle
 /gradle
-/.gradle
 *.properties
 /toi-client/node_modules
 *.md
-/.gradle
+
+toi-api/src/main/resources/application.conf
 /.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content/using-npm
 /.gradle/npm/npm-v9.0.0/node_modules/npm/docs/content
 .gradle/npm/npm-v9.0.0/node_modules/npm/docs/content/using-npm/scripts.md
@@ -12,15 +12,11 @@
 *.ps1
 /toi-client/.gradle
 /.gradle
-/.gradle
 /.gradle/8.8/executionHistory
 .gradle/8.8/checksums/checksums.lock
 .gradle/8.8/executionHistory/executionHistory.lock
 .gradle/buildOutputCleanup/buildOutputCleanup.lock
 .gradle/8.8/fileHashes/fileHashes.lock
-/.gradle
-/toi-api/build
-/.gradle
 /toi-api/build
 toi-client/.gradle/npm/npm-v9.6.7/npx.ps1
 toi-client/.gradle/npm/npm-v9.6.7/npx.cmd
@@ -6893,3 +6889,5 @@ toi-client/.gradle/nodejs/node-v18.17.1-win-x64/corepack
 toi-client/.gradle/nodejs/node-v18.17.1-win-x64/CHANGELOG.md
 toi-api/src/main/resources/application.conf
 toi-api/src/main/resources/app.conf
+toi-api/src/main/resources/application.conf
+toi-api/src/main/resources/application.conf

@@ -1,19 +1,22 @@
 package database
 
 // DatabaseConfig.kt
+import com.typesafe.config.ConfigFactory
 import org.jetbrains.exposed.sql.Database
 import io.ktor.server.application.*
+import java.io.File
+
 
 object DatabaseConfig {
     fun init(app: Application) {
-        val config = app.environment.config
-        val url = config.property("database.url").getString()
-        val user = config.property("database.user").getString()
-        val password = config.property("database.password").getString()
-        val driver = config.property("database.driver").getString()
+        val fileConfig = ConfigFactory.parseFile(File("src/main/resources/application.conf"))
+        val dbUrl = fileConfig.getString("database.url")
+        val user =fileConfig.getString("database.user")
+        val password =  fileConfig.getString("database.password")
+        val driver =  fileConfig.getString("database.driver")
 
         Database.connect(
-            url = url,
+            url = dbUrl,
             driver = driver,
             user = user,
             password = password

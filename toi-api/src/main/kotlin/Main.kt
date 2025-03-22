@@ -18,5 +18,6 @@ fun main() {
         routing {
             toiletRoute(toiletService)
         }
+        println("server is running")
     }.start(wait = true)
 }

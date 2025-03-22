@@ -1,6 +1,7 @@
 plugins {
     application
     kotlin("jvm") version "1.9.22"
+    kotlin("plugin.serialization") version "1.9.22"
     id("io.ktor.plugin") version "2.3.0"
 }
 
@@ -22,6 +23,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.1.4")
+    implementation("ch.qos.logback:logback-classic:1.2.11")
+
 }
 
 java {
