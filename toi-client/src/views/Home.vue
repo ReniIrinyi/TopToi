@@ -23,12 +23,12 @@
 </template>
 
 <script>
-import MapComponent from '../components/Map.vue';
-import ToiletCard from '../components/ToiletCard.vue';
-import ToiletList from '../components/ToiletList.vue';
-import AddToilet from '../components/AddToilet.vue';
+import MapComponent from './Map.vue';
+import ToiletCard from './ToiletCard.vue';
+import ToiletList from './ToiletList.vue';
+import AddToilet from './AddToilet.vue';
 import apiService from '@/service/apiService.js';
-import Header from '../components/Header.vue';
+import Header from './Header.vue';
 
 export default {
   components: { MapComponent, ToiletCard, ToiletList, AddToilet, Header },

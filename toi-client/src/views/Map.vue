@@ -13,7 +13,7 @@ const props = defineProps({
 let directionsService;
 let directionsRenderer;
 
-const travelMode= ref(google.maps.TravelMode.WALKING)
+const travelMode= ref(null)
 const map = ref(null);
 const mapHeight = ref(window.innerHeight);
 
@@ -122,6 +122,9 @@ function initMap() {
     ]
   });
 
+  travelMode._value = google.maps.TravelMode.WALKING;
+  console.log(travelMode._value)
+
   renderMarkers();
 }
 
@@ -140,8 +143,7 @@ onMounted(() => {
 
 
 function setTravelMode(mode) {
-  console.log(mode)
-  travelMode.value = google.maps.TravelMode[mode];
+  travelMode._value = google.maps.TravelMode[mode];
 }
 
 function drawRoute(from, to) {
@@ -153,7 +155,7 @@ function drawRoute(from, to) {
       {
         origin: from,
         destination: to,
-        travelMode: this.travelMode.value,
+        travelMode: travelMode._value,
       },
       (result, status) => {
         if (status === "OK") {

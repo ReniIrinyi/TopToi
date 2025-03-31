@@ -18,8 +18,8 @@
 </template>
 
 <script>
-import apiService from '@/service/apiService';
-import GoogleOneTap from "@/components/GoogleOneTap.vue";
+import apiService from '@/service/apiService.js';
+import GoogleOneTap from "@/views/GoogleOneTap.vue";
 
 export default {
   components: {GoogleOneTap},
