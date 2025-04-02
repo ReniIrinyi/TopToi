@@ -15,7 +15,7 @@
             <p><strong>{{ userName }}</strong></p>
             <p>{{ userEmail }}</p>
             <hr />
-            <button @click="logout">Kijelentkezés</button>
+            <button @click="logout">{{this.t('LABEL_LOGOUT')}}</button>
           </template>
         </div>
       </div>

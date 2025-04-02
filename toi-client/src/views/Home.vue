@@ -14,6 +14,8 @@
         @selected-toilet="selectToilet"
         :center="userPosition"
         ref="map"
+        @map-moved="onMapMoved"
+
     />
     <ToiletCard   @travelMode="travelTo"  @navigate-to="panTo" v-if="selectedToilet" :toilet="selectedToilet" />
     <button v-if="!showToiletList && !showAddToilet" class="btn btn-wc" @click="showToiletList =true">🚻</button>
@@ -38,33 +40,84 @@ export default {
       toilets: [],
       showToiletList: true,
       showAddToilet: false,
-      userPosition: {lat: 47.292511253285674, lng: 7.959213904251256},
+      lastFetchedPosition: null,
+      userPosition: {lat:null, lng:null}
     };
   },
   computed: {
     sortedToilets() {
-      return this.toilets?.sort((a, b) => {
-        const distA = this.getDistance(a?.location || a?.geometry?.location);
-        const distB = this.getDistance(b?.location || b?.geometry?.location);
-        return distA - distB;
-      });
-    },
+        return this.toilets?.sort((a, b) => {
+          const locA = a?.location || a?.geometry?.location;
+          const locB = b?.location || b?.geometry?.location;
+
+          if (!this.isValidCoordinate(locA) || !this.isValidCoordinate(locB)) return 0;
+
+          const distA = this.getDistance(this.userPosition, locA);
+          const distB = this.getDistance(this.userPosition, locB);
+          return distA - distB;
+        });
+      }
   },
   mounted() {
-    navigator.geolocation.getCurrentPosition(
-        pos => {
-          this.userPosition = {
-            lat: pos.coords?.latitude,
-            lng: pos.coords?.longitude,
+    navigator.geolocation.watchPosition(
+        (pos) => {
+          const newPos = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
           };
-          this.loadToilets();
+
+          this.userPosition = newPos;
+
+          if (!this.lastFetchedPosition) {
+            this.lastFetchedPosition = { ...newPos };
+            this.loadToilets();
+            return;
+          }
+
+          const dist = this.getDistance(this.lastFetchedPosition, newPos);
+
+          if (dist > 1) {
+            this.loadToilets();
+            this.lastFetchedPosition = { ...newPos };
+          }
         },
-        () => {
-          this.loadToilets();
+        err => {
+          console.error(err);
+          // Fallback
+          /*if (!this.userPosition) {
+            this.userPosition = { lat: 47.2925, lng: 7.9592 };
+            this.loadToilets();
+          }*/
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
         }
     );
+
+
+
   },
   methods: {
+    isValidCoordinate(loc) {
+      return loc &&
+          typeof loc.lat === 'number' &&
+          typeof loc.lng === 'number' &&
+          isFinite(loc.lat) &&
+          isFinite(loc.lng);
+    },
+    onMapMoved(center) {
+      const dist = this.lastFetchedPosition
+          ? this.getDistance(this.lastFetchedPosition, center)
+          : Infinity;
+
+      if (dist > 1) {
+        this.userPosition = center;
+        this.lastFetchedPosition = center;
+        this.loadToilets();
+      }
+    },
     travelTo(method){
       this.$refs.map.setTravelMode(method)
     },
@@ -75,7 +128,9 @@ export default {
       );
     },
     loadToilets() {
+      console.log('get toalets...')
       apiService.getToilets(this.userPosition?.lat, this.userPosition?.lng).then(res => {
+        console.log(res)
         this.toilets = res.data.filter(t => t.id);
       });
     },
@@ -85,25 +140,22 @@ export default {
     closeToiletList() {
       this.showToiletList = false;
     },
-    getDistance(location) {
-      const lat1 = this.userPosition?.lat;
-      const lon1 = this.userPosition?.lng;
-      const lat2 = location?.lat;
-      const lon2 = location?.lng;
-
+    getDistance(pos1, pos2) {
       const R = 6371;
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const toRad = x => (x * Math.PI) / 180;
+
+      const dLat = toRad(pos2.lat - pos1.lat);
+      const dLon = toRad(pos2.lng - pos1.lng);
 
       const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+          Math.cos(toRad(pos1.lat)) * Math.cos(toRad(pos2.lat)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
-    },
+    }
+
   },
 };
 </script>

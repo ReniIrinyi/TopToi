@@ -1,5 +1,6 @@
 key;hu;de;eng
 LABEL_LOGIN;Bejelentkezés;Anmelden;Login
+LABEL_LOGOUT;Kijelentkezés;Abmelden;Logout
 LABEL_REGISTRATION;Regisztrâciô;Registrieren;Registration
 LABEL_NEAR_TOILETS;Közeli mosdôk;Toaletten in der Nähe;Near Toilets
 LABEL_EMAIL;Email;Email
