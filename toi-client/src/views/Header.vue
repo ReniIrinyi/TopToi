@@ -8,8 +8,8 @@
         <img class="avatar" :src="userAvatar" alt="avatar" />
         <div class="dropdown" v-if="dropdownOpen">
           <template v-if="!isLoggedIn">
-            <button @click="showLogin = true">Bejelentkezés</button>
-            <button @click="showRegister = true" class="secondary">Regisztráció</button>
+            <button @click="showLogin = true">{{this.t('LABEL_LOGIN')}}</button>
+            <button @click="showRegister = true" class="secondary">{{ this.t('LABEL_REGISTRATION') }}</button>
           </template>
           <template v-else>
             <p><strong>{{ userName }}</strong></p>
@@ -20,6 +20,20 @@
         </div>
       </div>
     </div>
+    <div class="language-selector" @click="toggleLanguageDropdown">
+      <span class="flag-icon">{{ getFlagIcon(currentLanguage) }}</span>
+      <div class="language-dropdown" v-if="languageDropdownOpen">
+        <div
+            v-for="lang in getAvailableLanguages()"
+            :key="lang"
+            class="language-option"
+            @click.stop="changeLanguage(lang)"
+        >
+          {{ getFlagIcon(lang) }}
+        </div>
+      </div>
+    </div>
+
 
     <LoginDialog v-if="showLogin" @close="showLogin = false" @logged-in="onLogin" />
     <RegisterDialog v-if="showRegister" @close="showRegister = false" @registered="onRegister" />
@@ -29,7 +43,7 @@
 <script>
 import LoginDialog from './LoginForm.vue';
 import RegisterDialog from './RegisterForm.vue';
-
+import {translate, getLanguage, setLanguage} from "@/service/translationService.js";
 export default {
   components: { LoginDialog, RegisterDialog },
   data() {
@@ -37,12 +51,20 @@ export default {
       showLogin: false,
       showRegister: false,
       dropdownOpen: false,
+      languageDropdownOpen: false,
+      currentLanguage: getLanguage(),
       userEmail: localStorage.getItem('userEmail') || null,
       userName: localStorage.getItem('userName') || 'Felhasználó',
       userAvatar: localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp',
     };
   },
+  mounted() {
+  console.log('component Header rendered... ')
+  },
   computed: {
+    t(){
+      return translate;
+    },
     isLoggedIn() {
       return !!localStorage.getItem('token');
     },
@@ -69,6 +91,25 @@ export default {
       this.dropdownOpen = false;
       location.reload();
     },
+    getFlagIcon(lang) {
+      switch (lang) {
+        case 'hu': return '🇭🇺';
+        case 'en': return '🇬🇧';
+        case 'de': return '🇩🇪';
+        default: return '🌐';
+      }
+    },
+    getAvailableLanguages() {
+      return ['hu', 'en', 'de'].filter(lang => lang !== this.currentLanguage);
+    },
+    toggleLanguageDropdown() {
+      this.languageDropdownOpen = !this.languageDropdownOpen;
+    },
+    changeLanguage(lang) {
+      this.currentLanguage = lang;
+      setLanguage(lang);
+      this.languageDropdownOpen = false;
+    }
   },
 };
 </script>
@@ -143,5 +184,44 @@ export default {
 .dropdown .secondary {
   background: #f0f0f0;
   color: #555;
+
+  .language-selector {
+    position: relative;
+    margin-left: 20px;
+    cursor: pointer;
+    font-size: 20px;
+    user-select: none;
+  }
+
+  .flag-icon {
+    font-size: 22px;
+  }
+
+  .language-dropdown {
+    position: absolute;
+    right: 0;
+    margin-top: 10px;
+    background: white;
+    color: black;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+  }
+
+  .language-option {
+    font-size: 22px;
+    padding: 6px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .language-option:hover {
+    background-color: #f0f0f0;
+    border-radius: 4px;
+  }
+
+
+
 }
 </style>

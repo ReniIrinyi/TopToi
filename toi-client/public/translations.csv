@@ -1,2 +1,17 @@
 key;hu;de;eng
-LOGIN;Bejelentkezés;Anmelden;Login
+LABEL_LOGIN;Bejelentkezés;Anmelden;Login
+LABEL_REGISTRATION;Regisztrâciô;Registrieren;Registration
+LABEL_NEAR_TOILETS;Közeli mosdôk;Toaletten in der Nähe;Near Toilets
+LABEL_EMAIL;Email;Email
+LABEL_PASSWORD;Jelszô;Passwort;Password
+LABEL_OR;vagy;oder;or
+LABEL_CLOSE;Bezârâs;Schliessen;Close
+LABEL_ADD_TOILET;Mosdô hozzâadâsa;WC hinzufügen;Add Toilet
+LABEL_NAME;Megnevezês;Bezeichnung;Label
+LABEL_WICKELRAUM;Pelenkâzô;Wickelraum;Baby changing station
+LABEL_ROLLSTUHLGERECHT;Akadâlymentes;Accessible
+LABEL_ZU_FUSS;Gyalog;zu Fuss;on Foot
+LABEL_AUTO;Auto;Auto;Auto
+LABEL_VELO;Bicigli;Fahrrad;Bicycle
+LABEL_BEWERTUNG;Èrtêkelês;Bewertung;Rating
+LABEL_ROUTE;Ùtvonal;Route;Route

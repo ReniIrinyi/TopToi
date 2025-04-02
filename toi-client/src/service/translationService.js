@@ -4,11 +4,12 @@ const translations = {};
 let currentLang = 'hu';
 
 export function setLanguage(lang) {
+    localStorage.setItem('lang', lang)
     currentLang = lang;
 }
 
 export function getLanguage() {
-    return currentLang;
+    return localStorage.getItem('lang') || 'hu';
 }
 
 export async function loadTranslations() {
