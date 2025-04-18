@@ -1,9 +1,17 @@
 <template>
-  <div id="map" :style="{ width: '100%', height: `${mapHeight}px` }"></div>
+  <div style="width: 100%; height: 100vh;">
+    <div id="header" style="height: 70px;">
+      <Header />
+    </div>
+    <div id="map" style="width: 100%; height: calc(100vh - 70px);">
+    </div>
+  </div>
 </template>
+
 
 <script setup>
 import { onMounted, ref, watch } from 'vue';
+import Header from "@/views/Header.vue";
 const emit = defineEmits(['map-moved']);
 
 const props = defineProps({
@@ -17,7 +25,6 @@ let directionsRenderer;
 const markers = [];
 const travelMode= ref(null)
 const map = ref(null);
-const mapHeight = ref(window.innerHeight);
 
 function renderMarkers() {
   if (!map.value || !props.toilets) return;
@@ -135,14 +142,22 @@ function initMap() {
 
 
   google.maps.event.addListener(map.value, 'idle', () => {
-    const center = map.value.getCenter();
-    const newCenter = {
-      lat: center.lat(),
-      lng: center.lng()
-    };
-    renderMarkers();
-    emit('map-moved', newCenter);
-  });
+  const center = map.value.getCenter();
+
+  if (!center || isNaN(center.lat()) || isNaN(center.lng())) {
+    console.warn("Ungültiges Zentrum:", center);
+    return;
+  }
+
+  const newCenter = {
+    lat: center.lat(),
+    lng: center.lng()
+  };
+
+  renderMarkers();
+  emit('map-moved', newCenter);
+});
+
 
   travelMode._value = google.maps.TravelMode.WALKING;
 

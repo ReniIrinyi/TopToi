@@ -16,6 +16,7 @@ import service.Service
 fun Route.toiletRoute(service:Service){
     route("/toilets") {
         get {
+        service.debugLog("here");
             val lat = call.request.queryParameters["lat"]?.toDoubleOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             val lng = call.request.queryParameters["lng"]?.toDoubleOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             service.debugLog(service.fetchToilets(lat,lng))

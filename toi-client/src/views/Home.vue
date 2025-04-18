@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <Header />
+  <div class="home-container">
     <ToiletList
         v-if="showToiletList && !selectedToilet"
         :userPosition="userPosition"
@@ -158,6 +157,11 @@ export default {
 </script>
 
 <style scoped>
+
+.home-container{
+  height: 100vh;
+}
+
 .btn {
   position: fixed;
   right: 20px;

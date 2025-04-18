@@ -121,23 +121,11 @@ export default {
   align-items: center;
   background-color: #008080;
   color: white;
-  padding: 10px 20px;
+  height: 100%;
 }
 
 .logo h1 {
   margin: 0;
-}
-
-.wc-toggle {
-  background: white;
-  color: #008080;
-  font-weight: bold;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 16px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .auth-section {
