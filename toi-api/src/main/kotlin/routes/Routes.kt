@@ -19,7 +19,6 @@ fun Route.toiletRoute(service:Service){
         service.debugLog("here");
             val lat = call.request.queryParameters["lat"]?.toDoubleOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
             val lng = call.request.queryParameters["lng"]?.toDoubleOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
-            service.debugLog(service.fetchToilets(lat,lng))
             call.respond(service.fetchToilets(lat,lng))
         }
         get("{toiletID}") {
@@ -88,7 +87,7 @@ fun Route.toiletRoute(service:Service){
     }
 
     route("/user") {
-
+        service.debugLog("here")
         post("/register") {
             val request = call.receive<UserRequest>()
             val success = service.registerUser(request)
@@ -101,9 +100,12 @@ fun Route.toiletRoute(service:Service){
 
         post("/login") {
             val request = call.receive<UserRequest>()
+            service.debugLog(request)
             val authenticated = service.authenticateUser(request)
+            service.debugLog(authenticated)
             if (authenticated) {
                 val token = service.generateJwt(request.email)
+                service.debugLog(token)
                 call.respond(HttpStatusCode.OK, mapOf("token" to token))
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")

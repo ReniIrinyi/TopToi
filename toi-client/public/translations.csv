@@ -10,9 +10,16 @@ LABEL_CLOSE;Bezârâs;Schliessen;Close
 LABEL_ADD_TOILET;Mosdô hozzâadâsa;WC hinzufügen;Add Toilet
 LABEL_NAME;Megnevezês;Bezeichnung;Label
 LABEL_WICKELRAUM;Pelenkâzô;Wickelraum;Baby changing station
-LABEL_ROLLSTUHLGERECHT;Akadâlymentes;Accessible
+LABEL_ROLLSTUHLGERECHT;Akadâlymentes;Rohlstuhlgerecht;Accessible
 LABEL_ZU_FUSS;Gyalog;zu Fuss;on Foot
 LABEL_AUTO;Auto;Auto;Auto
 LABEL_VELO;Bicigli;Fahrrad;Bicycle
 LABEL_BEWERTUNG;Èrtêkelês;Bewertung;Rating
 LABEL_ROUTE;Ùtvonal;Route;Route
+LABEL_PRICE;Ár;Preis;Price
+LABEL_NAME;Wc megnevezés;Bezeichnung;Bezeichnung
+LABEL_ADD_TOILET;Wc hozzáadás;Wc hinzufügen;Add Toilet;
+LABEL_SPEICHERN;Mentés;Speichern;Save
+LABEL_CLOSE;Bezárás;Schliessen;Close
+LABEL_GEOLOCATION_DENIED;Engedélyezze a Helymeghatározás;Standortzugriff wurde verweigert. Ohne Standort kann kein WC hinzugefügt werden. Bitte aktivieren Sie die Standortfreigabe.;
+LABEL_SAVE_FAILED;Mentés sikertelen;Speichern fehlgeschlagen;

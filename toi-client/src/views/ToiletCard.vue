@@ -33,9 +33,14 @@
 </template>
 
 <script>
+import {translate} from "@/service/translationService.js";
+
 export default {
   props: ['toilet'],
   computed: {
+    t(){
+     return translate
+    },
     positiveVotes() {
       return this.toilet.votes?.filter(v => v.value > 0).length || 0;
     },

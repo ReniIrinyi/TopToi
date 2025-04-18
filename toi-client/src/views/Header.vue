@@ -121,12 +121,14 @@ export default {
   align-items: center;
   background-color: #008080;
   color: white;
+  padding: 0 20px;
   height: 100%;
 }
 
 .logo h1 {
   margin: 0;
 }
+
 
 .auth-section {
   position: relative;

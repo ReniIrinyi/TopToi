@@ -43,12 +43,14 @@ fun main() {
             /*for produktion*/
             /*allowHost("toptoi.ch")
             allowHost("www.toptoi.ch")*/
-
+            allowMethod(HttpMethod.Options)
             allowHeader(HttpHeaders.ContentType)
+            allowHeader(HttpHeaders.Authorization)
             allowMethod(HttpMethod.Get)
             allowMethod(HttpMethod.Post)
             allowMethod(HttpMethod.Put)
             allowMethod(HttpMethod.Delete)
+            allowCredentials = true
         }
         DatabaseConfig.init(this)
         val toiletService = Service()

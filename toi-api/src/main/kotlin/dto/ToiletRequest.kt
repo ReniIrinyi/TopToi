@@ -1,5 +1,7 @@
 package dto
 
+import database.model.NoteModel
+import database.model.VoteModel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,11 +12,10 @@ data class ToiletRequest(
     val openHours: List<Int> = emptyList(),
     val tags: TagsRequest = TagsRequest(),
     val entryMethod: String? = null,
-    val priceHUF: Double? = null,
-    val priceEUR: Double? = null,
+    val priceCHF: Double? = null,
     val code: String? = null,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
 )
 
 @Serializable

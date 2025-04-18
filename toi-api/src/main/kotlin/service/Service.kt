@@ -73,7 +73,7 @@ class Service{
             if (!exists) {
                 User.insert {
                     it[User.email] = email
-                    it[User.passwordHash] = "google_oauth"
+                    it[passwordHash] = "google_oauth"
                 }
             }
         }
@@ -88,10 +88,10 @@ class Service{
         val algorithm = Algorithm.HMAC256(secret)
 
         return JWT.create()
-            .withSubject("UserAuthentication")
+            .withSubject("UserAuth")
             .withClaim("email", email)
             .withIssuedAt(Date())
-            .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 óra
+            .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 Std
             .sign(algorithm)
     }
 
@@ -173,8 +173,7 @@ class Service{
                         WHEELCHAIR_ACCESSIBLE = row[Toilet.wheelchairAccessible]
                     ),
                     entryMethod = row[Toilet.entryMethod],
-                    priceHUF = row[Toilet.priceHUF],
-                    priceEUR = row[Toilet.priceEUR],
+                    priceCHF = row[Toilet.priceCHF],
                     code = row[Toilet.code],
                     latitude = row[Toilet.latitude],
                     longitude = row[Toilet.longitude],
@@ -211,7 +210,7 @@ class Service{
             val location = obj["geometry"]!!.jsonObject["location"]!!.jsonObject
 
             ToiletModel(
-                id = nextId + index, // ideiglenes ID
+                id = nextId + index,
                 name = obj["name"]?.jsonPrimitive?.content ?: "Ismeretlen WC",
                 addDate = "",
                 latitude = location["lat"]!!.jsonPrimitive.double,
@@ -227,8 +226,43 @@ class Service{
     }
 
     fun addToilet(request: ToiletRequest): ToiletModel {
-        val newToilet = ToiletModel(
-            id = nextId++,
+        val toiletId = try {
+            transaction {
+                Toilet.insert {
+                    it[name] = request.name
+                    it[addDate] = request.addDate
+                    it[category] = request.category
+                    it[entryMethod] = request.entryMethod
+                    it[priceCHF] = request.priceCHF
+                    it[code] = request.code
+                    it[latitude] = request.latitude
+                    it[longitude] = request.longitude
+                    it[babyRoom] = request.tags.BABY_ROOM
+                    it[wheelchairAccessible] = request.tags.WHEELCHAIR_ACCESSIBLE
+                } get Toilet.id
+            }
+        }
+            catch (e:Exception){
+                e.printStackTrace()
+                return ToiletModel(
+                    id = TODO(),
+                    userId = TODO(),
+                    name = TODO(),
+                    addDate = TODO(),
+                    category = TODO(),
+                    openHours = TODO(),
+                    tags = TODO(),
+                    entryMethod = TODO(),
+                    priceCHF = TODO(),
+                    code = TODO(),
+                    latitude = TODO(),
+                    longitude = TODO(),
+                    notes = TODO(),
+                    votes = TODO()
+                )
+            }
+        return ToiletModel(
+            id = toiletId,
             name = request.name,
             addDate = request.addDate,
             category = request.category,
@@ -238,16 +272,14 @@ class Service{
                 WHEELCHAIR_ACCESSIBLE = request.tags.WHEELCHAIR_ACCESSIBLE
             ),
             entryMethod = request.entryMethod,
-            priceHUF = request.priceHUF,
-            priceEUR = request.priceEUR,
+            priceCHF = request.priceCHF,
             code = request.code,
             latitude = request.latitude,
             longitude = request.longitude,
             notes = emptyList(),
             votes = emptyList()
         )
-        toilets.add(newToilet)
-        return newToilet
+
     }
 
     fun vote(toiletID: String, userID: String, voteValue: Int): String {

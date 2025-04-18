@@ -1,46 +1,74 @@
 <template>
   <div class="overlay">
     <div class="dialog">
-      <h2>Mosdó hozzáadása</h2>
+      <h2>{{this.t("LABEL_ADD_TOILET")}}</h2>
       <form @submit.prevent="submitForm">
-        <input v-model="form.name" required placeholder="Mosdó neve" />
-        <input v-model.number="form.price" type="number" placeholder="Ár (CHF)" />
-        <label><input type="checkbox" v-model="form.tags.BABY_ROOM" /> Pelenkázó</label>
-        <label><input type="checkbox" v-model="form.tags.WHEELCHAIR_ACCESSIBLE" /> Akadálymentes</label>
-        <button type="submit">Hozzáadás</button>
+        <div style="margin-bottom: 6px;">
+          <label for="name" style="display: block; font-weight: 500; margin-bottom: 4px;">{{ t('LABEL_NAME') }}</label>
+          <input id="name" v-model="form.name" type="text" required style="width: 100%; padding: 6px;" />
+        </div>
+
+        <div style="margin-bottom: 6px;">
+          <label for="price" style="display: block; font-weight: 500; margin-bottom: 4px;">{{ t('LABEL_PRICE') }}</label>
+          <input id="price" v-model.number="form.priceCHF" type="number" style="width: 100%; padding: 6px;" />
+        </div>
+        <label><input type="checkbox" v-model="form.tags.BABY_ROOM" /> {{ t('LABEL_WICKELRAUM') }}</label>
+        <label><input type="checkbox" v-model="form.tags.WHEELCHAIR_ACCESSIBLE" /> {{this.t('LABEL_ROLLSTUHLGERECHT')}}</label>
+        <button type="submit">{{ this.t('LABEL_SPEICHERN') }}</button>
       </form>
-      <button class="close" @click="$emit('close')">Bezárás</button>
+      <button class="close" @click="$emit('close')">{{ this.t('LABEL_CLOSE') }}</button>
     </div>
   </div>
 </template>
 
 <script>
 import api from '../service/apiService.js';
+import {translate} from "@/service/translationService.js";
 
 export default {
   data() {
     return {
       form: {
         name: '',
-        price: 0,
-        tags: {BABY_ROOM: false, WHEELCHAIR_ACCESSIBLE: false},
+        addDate: new Date().toISOString(),
+        category: 'public',
+        openHours: [],
+        tags: { BABY_ROOM: false, WHEELCHAIR_ACCESSIBLE: false },
+        entryMethod: 'free',
+        priceCHF: 0,
+        code: '',
         latitude: null,
         longitude: null,
-      },
+      }
     };
+  },
+  computed: {
+    t(){
+      return translate;
+    },
   },
   methods: {
     submitForm() {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        this.form.latitude = pos.coords.latitude;
-        this.form.longitude = pos.coords.longitude;
+      console.log('submit..')
+      navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            this.form.latitude = pos.coords.latitude;
+            this.form.longitude = pos.coords.longitude;
 
-        api.addToilet(this.form).then(() => {
-          alert('Mosdó sikeresen hozzáadva!');
-          this.$emit('close'); // zárja be automatikusan a popupot
-        });
-      });
-    },
+            api.addToilet(this.form).then(() => {
+              this.$emit('close');
+            }).catch(err => {
+              console.error("API error:", err);
+              alert(this.t('LABEL_SAVE_FAILED'));
+            });
+          },
+          (err) => {
+            console.error("Geolocation error:", err);
+            alert(this.t('LABEL_GEOLOCATION_DENIED'));
+          }
+      );
+    }
+
   },
 };
 </script>
@@ -62,6 +90,7 @@ export default {
 .dialog {
   background: white;
   padding: 20px;
+  color: #181818;
   border-radius: 8px;
   min-width: 300px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
