@@ -10,7 +10,7 @@ node {
 
 
 tasks.register<com.github.gradle.node.npm.task.NpmTask>("runFrontend") {
-    dependsOn("npmInstall")
+    /*dependsOn("npmInstall")*/
     args.set(listOf("run", "dev"))
 }
 

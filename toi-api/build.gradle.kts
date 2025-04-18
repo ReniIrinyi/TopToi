@@ -3,6 +3,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.serialization") version "1.9.22"
     id("io.ktor.plugin") version "2.3.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 application {
@@ -35,6 +36,7 @@ dependencies {
     implementation("com.google.oauth-client:google-oauth-client:1.34.1")
     implementation("com.google.http-client:google-http-client-jackson2:1.43.3")
     implementation("com.auth0:java-jwt:4.4.0")
+
 
 
 }

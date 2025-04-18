@@ -16,3 +16,6 @@ services:
     container_name: toi-client-frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./toi-client:/app
+    command: npm run dev

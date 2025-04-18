@@ -2,12 +2,15 @@ FROM node:18
 
 WORKDIR /app
 
-COPY . .
+COPY --from=build /app/build/libs/*-all.jar app.jar
+
+COPY package*.json ./
 
 RUN npm install
 
-RUN npm run build
+COPY . .
+
 
 EXPOSE 3000
 
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "dev"]

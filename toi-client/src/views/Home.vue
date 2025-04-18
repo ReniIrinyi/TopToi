@@ -95,9 +95,6 @@ export default {
           maximumAge: 0
         }
     );
-
-
-
   },
   methods: {
     isValidCoordinate(loc) {
