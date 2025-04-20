@@ -36,6 +36,74 @@
   --section-gap: 160px;
 }
 
+:root{
+  --primary-color: #3a80c1;
+  --primary-background:white;
+  --dark-text-color:#181818;
+}
+
+.input-element{
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.dialog{
+  display: flex;
+  flex-direction: column;
+  background-color: var(--primary-background);
+  color: var(--dark-text-color);
+  border-radius: 8px;
+  padding:10px;
+  min-width: 300px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--primary-color);
+  color: var(--primary-background);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.submit-btn{
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-btn {
+  background: none;
+  align-self: flex-end;
+  color: var(--primary-background);
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: var(--vt-c-black);

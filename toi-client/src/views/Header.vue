@@ -119,8 +119,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #008080;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--primary-background);
   padding: 0 20px;
   height: 100%;
 }
@@ -149,7 +149,7 @@ export default {
 .dropdown {
   position: absolute;
   right: 0;
-  background: white;
+  background: var(--primary-background);
   color: black;
   margin-top: 10px;
   padding: 10px;
@@ -162,8 +162,8 @@ export default {
   margin: 5px 0;
 }
 .dropdown button {
-  background: #008080;
-  color: white;
+  background: var(--primary-color);
+  color: var(--primary-background);
   border: none;
   padding: 6px;
   width: 100%;
@@ -172,7 +172,7 @@ export default {
   cursor: pointer;
 }
 .dropdown .secondary {
-  background: #f0f0f0;
+  background: var(--primary-background);
   color: #555;
 
   .language-selector {
@@ -191,7 +191,7 @@ export default {
     position: absolute;
     right: 0;
     margin-top: 10px;
-    background: white;
+    background: var(--primary-background);
     color: black;
     padding: 8px;
     border-radius: 6px;
@@ -207,7 +207,7 @@ export default {
   }
 
   .language-option:hover {
-    background-color: #f0f0f0;
+    background-color: var(--primary-background);
     border-radius: 4px;
   }
 

@@ -1,22 +1,36 @@
 <template>
   <div class="overlay">
     <div class="dialog">
-      <h2>{{this.t("LABEL_ADD_TOILET")}}</h2>
+      <div class="dialog-header">
+        <h2>{{this.t("LABEL_ADD_TOILET")}}</h2>
+        <button class="close-btn" @click="$emit('close')">✖</button>
+      </div>
       <form @submit.prevent="submitForm">
         <div style="margin-bottom: 6px;">
           <label for="name" style="display: block; font-weight: 500; margin-bottom: 4px;">{{ t('LABEL_NAME') }}</label>
-          <input id="name" v-model="form.name" type="text" required style="width: 100%; padding: 6px;" />
+          <input class="input-element" id="name" v-model="form.name" type="text" required style="width: 100%; padding: 6px;" />
         </div>
 
         <div style="margin-bottom: 6px;">
           <label for="price" style="display: block; font-weight: 500; margin-bottom: 4px;">{{ t('LABEL_PRICE') }}</label>
-          <input id="price" v-model.number="form.priceCHF" type="number" style="width: 100%; padding: 6px;" />
+          <input class="input-element" id="price" v-model.number="form.priceCHF" type="number" style="width: 100%; padding: 6px;" />
         </div>
         <label><input type="checkbox" v-model="form.tags.BABY_ROOM" /> {{ t('LABEL_WICKELRAUM') }}</label>
         <label><input type="checkbox" v-model="form.tags.WHEELCHAIR_ACCESSIBLE" /> {{this.t('LABEL_ROLLSTUHLGERECHT')}}</label>
-        <button type="submit">{{ this.t('LABEL_SPEICHERN') }}</button>
+
+        <div>
+          <textarea class="input-element" v-model="noteText" placeholder="Schildere anderen deine Meinung zu dieser Toalet ..." rows="3" style="width:100%; margin-top:8px;"></textarea>
+        </div>
+
+        <div style="margin: 12px 0; text-align: center;">
+        <span v-for="star in 5" :key="star" @click="setRating(star)" :style="{ cursor: 'pointer', fontSize: '24px', color: rating >= star ? '#ffd055' : '#bbb' }">★</span>
+        </div>
+
+        <button class="btn submit-btn" type="button" @click="triggerFileInput">📸 Fotos hinzufügen</button>
+        <input style="display:none" type="file" accept="image/*" capture="environment" @change="handleFile" />
+
+        <button class="btn submit-btn" type="submit">{{ this.t('LABEL_SPEICHERN') }}</button>
       </form>
-      <button class="close" @click="$emit('close')">{{ this.t('LABEL_CLOSE') }}</button>
     </div>
   </div>
 </template>
@@ -39,7 +53,10 @@ export default {
         code: '',
         latitude: null,
         longitude: null,
-      }
+      },
+      noteText: '',
+      rating: 0,
+      imageFile: null
     };
   },
   computed: {
@@ -48,6 +65,16 @@ export default {
     },
   },
   methods: {
+    triggerFileInput() {
+      this.$refs.fileInput.click();
+    },
+    handleFile(event) {
+      this.imageFile = event.target.files[0];
+    },
+    setRating(star) {
+      this.rating = star;
+      this.form.rating = star;
+    },
     submitForm() {
       console.log('submit..')
       navigator.geolocation.getCurrentPosition(
@@ -55,7 +82,23 @@ export default {
             this.form.latitude = pos.coords.latitude;
             this.form.longitude = pos.coords.longitude;
 
-            api.addToilet(this.form).then(() => {
+
+            const formData = new FormData();
+            for (const key in this.form) {
+              const val = this.form[key];
+              if (typeof val === 'object') {
+                formData.append(key, JSON.stringify(val));
+              } else {
+                formData.append(key, val);
+              }
+            }
+            formData.append('note', this.noteText);
+            formData.append('vote', this.vote);
+            if (this.imageFile) {
+              formData.append('image', this.imageFile);
+            }
+
+            api.addToilet(formData).then(() => {
               this.$emit('close');
             }).catch(err => {
               console.error("API error:", err);
@@ -74,56 +117,15 @@ export default {
 </script>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog {
-  background: white;
-  padding: 20px;
-  color: #181818;
-  border-radius: 8px;
-  min-width: 300px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-}
-
-input[type="text"],
-input[type="number"] {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
 
 label {
   display: block;
   margin: 8px 0;
 }
 
-button {
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  background-color: #008080;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
+.btn {
+  background-color: var(--primary-color);
+  color: var(--primary-background);
 }
 
-button.close {
-  background-color: #aaa;
-}
 </style>

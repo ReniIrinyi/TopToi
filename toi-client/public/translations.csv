@@ -18,8 +18,11 @@ LABEL_BEWERTUNG;Èrtêkelês;Bewertung;Rating
 LABEL_ROUTE;Ùtvonal;Route;Route
 LABEL_PRICE;Ár;Preis;Price
 LABEL_NAME;Wc megnevezés;Bezeichnung;Bezeichnung
-LABEL_ADD_TOILET;Wc hozzáadás;Wc hinzufügen;Add Toilet;
 LABEL_SPEICHERN;Mentés;Speichern;Save
 LABEL_CLOSE;Bezárás;Schliessen;Close
 LABEL_GEOLOCATION_DENIED;Engedélyezze a Helymeghatározás;Standortzugriff wurde verweigert. Ohne Standort kann kein WC hinzugefügt werden. Bitte aktivieren Sie die Standortfreigabe.;
 LABEL_SAVE_FAILED;Mentés sikertelen;Speichern fehlgeschlagen;
+LABEL_NOTES;Megjegyzések;Notizen;Notes
+LABEL_OWN_NOTES;Saját megjegyzések;Eigene Notizen;Own Notes
+LABEL_ADD_NOTE;Megjegyzés hozzáadása;Notizen hinzufügen;Add Notes
+LABEL_VON_DIR;töled;entfernt;Near

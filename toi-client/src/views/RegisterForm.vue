@@ -1,19 +1,20 @@
 <template>
   <div class="overlay">
     <div class="dialog">
-      <h2>Regisztráció</h2>
-      <form @submit.prevent="register">
-        <input v-model="email" type="email" placeholder="Email" required />
-        <input v-model="password" type="password" placeholder="Jelszó" required />
-        <input v-model="confirmPassword" type="password" placeholder="Jelszó megerősítése" required />
-        <button type="submit">Regisztráció</button>
-      </form>
+      <div class="dialog-header">
+        <h2>Regisztráció</h2>
+        <button class="close-btn" @click="$emit('close')">✖</button>
+      </div>
 
-      <div class="divider">vagy</div>
+      <form @submit.prevent="register">
+        <input class="input-element" v-model="email" type="email" placeholder="Email" required />
+        <input class="input-element" v-model="password" type="password" placeholder="Jelszó" required />
+        <input class="input-element" v-model="confirmPassword" type="password" placeholder="Jelszó megerősítése" required />
+        <button class="btn submit-btn" type="submit">Regisztráció</button>
+      </form>
 
       <GoogleOneTap :onLogin="handleGoogleLoginSuccess" />
 
-      <button class="close" @click="$emit('close')">Bezárás</button>
     </div>
   </div>
 </template>
@@ -64,51 +65,13 @@ export default {
 </script>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+
+.btn {
+  background-color: var(--primary-color);
+  color: var(--primary-background);
 }
-.dialog {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  min-width: 300px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-}
-input {
-  display: block;
-  width: 100%;
-  margin: 10px 0;
-  padding: 8px;
-}
-button {
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  background-color: #008080;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-}
+
 button.google {
   background-color: #db4437;
-}
-button.close {
-  background-color: #aaa;
-}
-.divider {
-  text-align: center;
-  margin: 10px 0;
-  color: #666;
 }
 </style>

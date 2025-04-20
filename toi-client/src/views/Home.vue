@@ -168,8 +168,8 @@ export default {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background-color: white;
-  color: #008080;
+  background-color: var(--primary-background);
+  color: var(--primary-color);
   font-size: 32px;
   font-weight: bold;
   border: none;

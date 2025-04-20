@@ -1,7 +1,5 @@
 package dto
 
-import database.model.NoteModel
-import database.model.VoteModel
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -16,6 +14,9 @@ data class ToiletRequest(
     val code: String? = null,
     val latitude: Double,
     val longitude: Double,
+    val vote: Int? = null,
+    val note: String? = null,
+    val imageBase64: String? = null
 )
 
 @Serializable

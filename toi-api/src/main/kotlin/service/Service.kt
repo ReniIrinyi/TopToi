@@ -26,6 +26,7 @@ import kotlinx.serialization.json.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
@@ -146,12 +147,14 @@ class Service{
         return transaction {
             Toilet.selectAll().map { row ->
                 val toiletId = row[Toilet.id]
-
                 val notes = Note.select { Note.toiletId eq toiletId }.map {
+                    val imageBytes = it[Note.img].bytes
                     NoteModel(
                         userId = it[Note.userId].toString(),
-                        addDate = it[Note.addDate],
-                        text = it[Note.text]
+                        note = it[Note.note],
+                        toiletId = it[Note.toiletId],
+                        img = imageBytes,
+                        addDate = it[Note.addDate].toString()
                     )
                 }
 
@@ -165,9 +168,9 @@ class Service{
                 ToiletModel(
                     id = toiletId,
                     name = row[Toilet.name],
-                    addDate = row[Toilet.addDate],
+                    addDate = row[Toilet.addDate].toString(),
                     category = row[Toilet.category],
-                    openHours = listOf(), // TODO
+                    openHours = listOf(),
                     tags = Tags(
                         BABY_ROOM = row[Toilet.babyRoom],
                         WHEELCHAIR_ACCESSIBLE = row[Toilet.wheelchairAccessible]
@@ -178,7 +181,8 @@ class Service{
                     latitude = row[Toilet.latitude],
                     longitude = row[Toilet.longitude],
                     notes = notes,
-                    votes = votes
+                    votes = votes,
+                    userId = "",
                 )
             }
         }
@@ -225,12 +229,11 @@ class Service{
         return toilets.find { it.id.toString() == id }
     }
 
-    fun addToilet(request: ToiletRequest): ToiletModel {
-        val toiletId = try {
-            transaction {
-                Toilet.insert {
+    fun addToilet(request: ToiletRequest, userEmail:String): ToiletModel {
+        return transaction {
+            try {
+                val toiletId = Toilet.insert {
                     it[name] = request.name
-                    it[addDate] = request.addDate
                     it[category] = request.category
                     it[entryMethod] = request.entryMethod
                     it[priceCHF] = request.priceCHF
@@ -239,46 +242,62 @@ class Service{
                     it[longitude] = request.longitude
                     it[babyRoom] = request.tags.BABY_ROOM
                     it[wheelchairAccessible] = request.tags.WHEELCHAIR_ACCESSIBLE
-                } get Toilet.id
+                }[Toilet.id]
+
+                val userId = User
+                    .select { User.email eq userEmail }
+                    .map { it[User.id] }
+                    .firstOrNull() ?: throw IllegalStateException("User not found")
+
+
+                if (request.vote != null && (request.vote == 1 || request.vote == -1)) {
+                    Vote.insert {
+                        it[Vote.toiletId] = toiletId
+                        it[Vote.userId] = userId
+                        it[value] = if (request.vote > 0) 1 else -1
+                    }
+                }
+
+                if (!request.note.isNullOrBlank()) {
+                    debugLog(request)
+
+                    val imageBytes: ByteArray? = request.imageBase64?.let {
+                        Base64.getDecoder().decode(it)
+                    }
+
+
+                    Note.insert {
+                        it[Note.toiletId] = toiletId
+                        it[Note.userId] = userId
+                        it[note] = request.note
+                        it[img] = ExposedBlob(imageBytes ?: ByteArray(0))
+                        it[addDate] = Instant.now()                 }
+                }
+
+                ToiletModel(
+                    id = toiletId,
+                    name = request.name,
+                    addDate = request.addDate,
+                    category = request.category,
+                    openHours = request.openHours,
+                    tags = Tags(
+                        BABY_ROOM = request.tags.BABY_ROOM,
+                        WHEELCHAIR_ACCESSIBLE = request.tags.WHEELCHAIR_ACCESSIBLE
+                    ),
+                    entryMethod = request.entryMethod,
+                    priceCHF = request.priceCHF,
+                    code = request.code,
+                    latitude = request.latitude,
+                    longitude = request.longitude,
+                    notes = emptyList(),
+                    votes = emptyList()
+                )
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw e
             }
         }
-            catch (e:Exception){
-                e.printStackTrace()
-                return ToiletModel(
-                    id = TODO(),
-                    userId = TODO(),
-                    name = TODO(),
-                    addDate = TODO(),
-                    category = TODO(),
-                    openHours = TODO(),
-                    tags = TODO(),
-                    entryMethod = TODO(),
-                    priceCHF = TODO(),
-                    code = TODO(),
-                    latitude = TODO(),
-                    longitude = TODO(),
-                    notes = TODO(),
-                    votes = TODO()
-                )
-            }
-        return ToiletModel(
-            id = toiletId,
-            name = request.name,
-            addDate = request.addDate,
-            category = request.category,
-            openHours = request.openHours,
-            tags = Tags(
-                BABY_ROOM = request.tags.BABY_ROOM,
-                WHEELCHAIR_ACCESSIBLE = request.tags.WHEELCHAIR_ACCESSIBLE
-            ),
-            entryMethod = request.entryMethod,
-            priceCHF = request.priceCHF,
-            code = request.code,
-            latitude = request.latitude,
-            longitude = request.longitude,
-            notes = emptyList(),
-            votes = emptyList()
-        )
 
     }
 
@@ -297,25 +316,25 @@ class Service{
         return "Vote updated"
     }
 
-    fun addNote(toiletID: String, userID: String, noteText: String): String {
+    fun addNote(toiletID: String, userID: String, noteText: String, imageBytes:ByteArray): String {
         if (noteText.length < 3) return "Note is too short!"
-        val toilet = fetchToilet(toiletID) ?: return "Toilet not found"
-        val newNote = NoteModel(userId = userID, addDate = Instant.now().toString(), text = noteText)
-        val newNotes = toilet.notes.toMutableList()
-        val index = newNotes.indexOfFirst { it.userId == userID }
-        if (index == -1) {
-            newNotes.add(newNote)
-        } else {
-            newNotes[index] = newNote
+
+        transaction {
+
+            Note.insert {
+                it[Note.toiletId] = toiletID.toInt()
+                it[Note.userId] = userID.toInt()
+                it[note] = noteText
+                it[addDate] = Instant.now()
+                it[Note.img] = ExposedBlob(imageBytes)
+            }
         }
-        val updatedToilet = toilet.copy(notes = newNotes.sortedByDescending { it.addDate })
-        toilets.removeIf { it.id.toString() == toiletID }
-        toilets.add(updatedToilet)
-        return "Note added/updated"
+
+        return "Note added"
     }
 
-    fun updateNote(toiletID: String, userID: String, noteText: String): String {
-        return addNote(toiletID, userID, noteText)
+    fun updateNote(toiletID: String, userID: String, noteText: String, imageBytes: ByteArray): String {
+        return addNote(toiletID, userID, noteText, imageBytes)
     }
 
     fun removeNote(toiletID: String, userID: String): String {

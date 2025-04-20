@@ -8,10 +8,18 @@ import dto.VoteRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import service.Service
+
+
+fun ApplicationCall.getCurrentUserEmail(): String {
+    val principal = this.principal<JWTPrincipal>()
+    return principal?.getClaim("email", String::class)
+        ?: throw IllegalStateException("No JWT principal or email found")
+}
 
 fun Route.toiletRoute(service:Service){
     route("/toilets") {
@@ -29,7 +37,8 @@ fun Route.toiletRoute(service:Service){
         authenticate("auth-jwt") {
             post {
                 val request = call.receive<ToiletRequest>()
-                val newToilet = service.addToilet(request)
+                val email = call.getCurrentUserEmail()
+                val newToilet = service.addToilet(request, email)
                 call.respond(HttpStatusCode.Created, newToilet)
             }
         }

@@ -48,7 +48,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100vh;
-  background: white;
+  background: var(--primary-background);
   z-index: 2000;
   padding: 20px;
   overflow-y: auto;
@@ -58,18 +58,10 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #008080;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--primary-background);
   padding: 10px;
   border-radius: 6px;
-}
-
-.close-btn {
-  background: none;
-  color: white;
-  font-size: 20px;
-  border: none;
-  cursor: pointer;
 }
 
 ul {
@@ -79,9 +71,9 @@ ul {
 }
 
 li {
-  background: #008080;
+  background: var(--primary-color);
   border-radius: 6px;
-  color: white;
+  color: var(--primary-background);
   margin-bottom: 12px;
   padding: 12px;
   display: flex;
