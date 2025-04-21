@@ -8,14 +8,14 @@
         <img class="avatar" :src="userAvatar" alt="avatar" />
         <div class="dropdown" v-if="dropdownOpen">
           <template v-if="!isLoggedIn">
-            <button @click="showLogin = true">{{this.t('LABEL_LOGIN')}}</button>
-            <button @click="showRegister = true" class="secondary">{{ this.t('LABEL_REGISTRATION') }}</button>
+            <button @click="showLogin = true">{{t('LABEL_LOGIN')}}</button>
+            <button @click="showRegister = true" class="secondary">{{ t('LABEL_REGISTRATION') }}</button>
           </template>
           <template v-else>
             <p><strong>{{ userName }}</strong></p>
             <p>{{ userEmail }}</p>
             <hr />
-            <button @click="logout">{{this.t('LABEL_LOGOUT')}}</button>
+            <button @click="logout">{{t('LABEL_LOGOUT')}}</button>
           </template>
         </div>
       </div>
@@ -40,78 +40,85 @@
   </header>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue';
 import LoginDialog from './LoginForm.vue';
 import RegisterDialog from './RegisterForm.vue';
-import {translate, getLanguage, setLanguage} from "@/service/translationService.js";
-export default {
-  components: { LoginDialog, RegisterDialog },
-  data() {
-    return {
-      showLogin: false,
-      showRegister: false,
-      dropdownOpen: false,
-      languageDropdownOpen: false,
-      currentLanguage: getLanguage(),
-      userEmail: localStorage.getItem('userEmail') || null,
-      userName: localStorage.getItem('userName') || 'Felhasználó',
-      userAvatar: localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp',
-    };
-  },
-  mounted() {
-  console.log('component Header rendered... ')
-  },
-  computed: {
-    t(){
-      return translate;
-    },
-    isLoggedIn() {
-      return !!localStorage.getItem('token');
-    },
-  },
-  methods: {
-    onLogin(email) {
-      this.userEmail = email;
-      this.userName = localStorage.getItem('userName') || 'Felhasználó';
-      this.userAvatar = localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp';
-      this.showLogin = false;
-    },
-    onRegister(email) {
-      this.userEmail = email;
-      this.showRegister = false;
-    },
-    toggleDropdown() {
-      this.dropdownOpen = !this.dropdownOpen;
-    },
-    logout() {
-      localStorage.clear();
-      this.userEmail = null;
-      this.userName = '';
-      this.userAvatar = '';
-      this.dropdownOpen = false;
-      location.reload();
-    },
-    getFlagIcon(lang) {
-      switch (lang) {
-        case 'hu': return '🇭🇺';
-        case 'en': return '🇬🇧';
-        case 'de': return '🇩🇪';
-        default: return '🌐';
-      }
-    },
-    getAvailableLanguages() {
-      return ['hu', 'en', 'de'].filter(lang => lang !== this.currentLanguage);
-    },
-    toggleLanguageDropdown() {
-      this.languageDropdownOpen = !this.languageDropdownOpen;
-    },
-    changeLanguage(lang) {
-      this.currentLanguage = lang;
-      setLanguage(lang);
-      this.languageDropdownOpen = false;
-    }
-  },
-};
+import { translate, getLanguage, setLanguage } from '@/service/translationService.js';
+
+const showLogin = ref(false);
+const showRegister = ref(false);
+const dropdownOpen = ref(false);
+const languageDropdownOpen = ref(false);
+const currentLanguage = ref(getLanguage());
+
+const userEmail = ref(localStorage.getItem('userEmail') || null);
+const userName = ref(localStorage.getItem('userName') || 'Felhasználó');
+const userAvatar = ref(localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp');
+
+const t = translate;
+
+const emit = defineEmits(['onAuthChange'])
+
+const isLoggedIn = computed(() => {
+  return !!localStorage.getItem('token');
+});
+
+function onLogin(email) {
+  userEmail.value = email;
+  console.log(localStorage)
+  userName.value = localStorage.getItem('userName') || 'Felhasználó';
+  userAvatar.value = localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp';
+  showLogin.value = false;
+  emit('onLogin')
+}
+
+function onRegister(email) {
+  userEmail.value = email;
+  showRegister.value = false;
+  emit('onAuthChange')
+}
+
+function toggleDropdown() {
+  dropdownOpen.value = !dropdownOpen.value;
+}
+
+function logout() {
+  localStorage.clear();
+  userEmail.value = null;
+  userName.value = '';
+  userAvatar.value = '';
+  dropdownOpen.value = false;
+  location.reload();
+  emit('onAuthChange')
+}
+
+function getFlagIcon(lang) {
+  switch (lang) {
+    case 'hu': return '🇭🇺';
+    case 'en': return '🇬🇧';
+    case 'de': return '🇩🇪';
+    default: return '🌐';
+  }
+}
+
+function getAvailableLanguages() {
+  return ['hu', 'en', 'de'].filter(lang => lang !== currentLanguage.value);
+}
+
+function toggleLanguageDropdown() {
+  languageDropdownOpen.value = !languageDropdownOpen.value;
+}
+
+function changeLanguage(lang) {
+  currentLanguage.value = lang;
+  setLanguage(lang);
+  languageDropdownOpen.value = false;
+}
+
+onMounted(() => {
+  console.log('component Header rendered...');
+});
 </script>
 
 <style scoped>

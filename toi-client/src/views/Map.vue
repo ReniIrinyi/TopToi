@@ -1,7 +1,7 @@
 <template>
   <div style="width: 100%; height: 100vh;">
     <div id="header" style="height: 70px;">
-      <Header />
+      <Header @onAuthChange="emit('onAuthChange')" />
     </div>
     <div id="map" style="width: 100%; height: calc(100vh - 70px);">
     </div>
@@ -12,45 +12,48 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import Header from "@/views/Header.vue";
-const emit = defineEmits(['map-moved']);
+
+let directionsService;
+let directionsRenderer;
+let userMarker = null;
+let watchId = null;
+const markers = [];
+
+const travelMode= ref(null)
+let destination = ref(null)
+const map = ref(null);
 
 const props = defineProps({
   toilets: Array,
   center:Object
 });
 
-let directionsService;
-let directionsRenderer;
+defineExpose({
+  drawRoute,
+  setTravelMode
+});
 
-const markers = [];
-const travelMode= ref(null)
-const map = ref(null);
+watch(() => props.toilets, (newVal) => {
+  renderMarkers();
+});
 
-function renderMarkers() {
-  if (!map.value || !props.toilets) return;
+onMounted(() => {
+  if (!window.google || !window.google.maps) {
+    window.initMap = initMap;
+    const apiKey = 'AIzaSyCyiyQzvlmWxLZkMC-SrNriQ3BcUXFII_M'
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+    script.async = true;
+    document.head.appendChild(script);
+  } else {
+    initMap();
 
-  markers.forEach(marker => marker.setMap(null));
-  markers.length = 0;
+  }
 
-  props.toilets.forEach(toilet => {
-    const lat = toilet.location?.latitude ?? toilet.latitude;
-    const lng = toilet.location?.longitude ?? toilet.longitude;
-
-    if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) {
-      return;
-    }
-
-    const marker = new google.maps.Marker({
-      map: map.value,
-      position: { lat, lng },
-      title: toilet.name,
-    });
-    markers.push(marker);
-  });
-}
-
-
+});
 function initMap() {
+
+
   map.value = new google.maps.Map(document.getElementById("map"), {
     zoom: 16,
     center: props.center,
@@ -142,47 +145,55 @@ function initMap() {
 
 
   google.maps.event.addListener(map.value, 'idle', () => {
-  const center = map.value.getCenter();
+    const center = map.value.getCenter();
 
-  if (!center || isNaN(center.lat()) || isNaN(center.lng())) {
-    console.warn("Ungültiges Zentrum:", center);
-    return;
-  }
+    if (!center || isNaN(center.lat()) || isNaN(center.lng())) {
+      console.warn("Ungültiges Zentrum:", center);
+      return;
+    }
 
-  const newCenter = {
-    lat: center.lat(),
-    lng: center.lng()
-  };
+    const newCenter = {
+      lat: center.lat(),
+      lng: center.lng()
+    };
 
-  renderMarkers();
-  emit('map-moved', newCenter);
-});
-
+    renderMarkers();
+    emit('map-moved', newCenter);
+  });
 
   travelMode._value = google.maps.TravelMode.WALKING;
 
 }
 
-onMounted(() => {
-  if (!window.google || !window.google.maps) {
-    window.initMap = initMap;
-    const apiKey = 'AIzaSyCyiyQzvlmWxLZkMC-SrNriQ3BcUXFII_M'
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
-    script.async = true;
-    document.head.appendChild(script);
-  } else {
-    initMap();
-  }
-});
+const emit = defineEmits(['map-moved', 'onAuthChange']);
+
+function renderMarkers() {
+  if (!map.value || !props.toilets) return;
+
+  markers.forEach(marker => marker.setMap(null));
+  markers.length = 0;
+
+  props.toilets.forEach(toilet => {
+    const lat = toilet.location?.latitude ?? toilet.latitude;
+    const lng = toilet.location?.longitude ?? toilet.longitude;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) {
+      return;
+    }
+
+    const marker = new google.maps.Marker({
+      map: map.value,
+      position: { lat, lng },
+      title: toilet.name,
+    });
+    markers.push(marker);
+  });
+}
 
 
 function setTravelMode(mode) {
   travelMode._value = google.maps.TravelMode[mode];
 }
-
-let userMarker = null;
-let watchId = null;
 
 function startFollowingUser() {
   if (navigator.geolocation) {
@@ -249,7 +260,6 @@ function stopFollowingUser() {
   }
 }
 
-let destination = ref(null)
 function drawRoute(from, to) {
   destination = to;
   directionsService = new google.maps.DirectionsService()
@@ -295,15 +305,5 @@ function getDistanceMeters(pos1, pos2) {
   return distance;
 }
 
-
-
-defineExpose({
-  drawRoute,
-  setTravelMode
-});
-
-watch(() => props.toilets, (newVal) => {
-  renderMarkers();
-});
 
 </script>

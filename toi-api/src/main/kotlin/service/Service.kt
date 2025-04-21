@@ -13,10 +13,7 @@ import database.model.NoteModel
 import database.model.Tags
 import database.model.ToiletModel
 import database.model.VoteModel
-import database.table.Note
-import database.table.Toilet
-import database.table.User
-import database.table.Vote
+import database.table.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
@@ -39,7 +36,7 @@ class Service{
     private val toilets = mutableListOf<ToiletModel>()
     private var nextId = 1
 
-    fun registerUser(request: UserRequest): Boolean {
+    fun createLocalUser(request: UserRequest): Boolean {
         val hashedPassword = BCrypt.hashpw(request.password, BCrypt.gensalt())
         return transaction {
             val exists = User.select { User.email eq request.email }.count() > 0
@@ -47,39 +44,50 @@ class Service{
             User.insert {
                 it[email] = request.email
                 it[passwordHash] = hashedPassword
+                it[authProvider] = AuthProvider.ENUM_LOCAL
             }
             true
+        }
+    }
+
+    fun createGoogleUser(email: String, name:String, imgUrl:String): Unit {
+        transaction {
+            User.insert {
+                it[User.email] = email
+                it[passwordHash] = "google_oauth"
+                it[authProvider] = AuthProvider.ENUM_GOOGLE
+                it[User.name] = name
+                it[User.imgUrl]=imgUrl
+            }
         }
     }
 
     fun authenticateUser(request: UserRequest): Boolean {
         return transaction {
             val userRow = User.select { User.email eq request.email }.singleOrNull() ?: return@transaction false
+            if (userRow[User.authProvider] != AuthProvider.ENUM_LOCAL) return@transaction false
             val hash = userRow[User.passwordHash]
             BCrypt.checkpw(request.password, hash)
         }
     }
 
-    fun verifyGoogleIdToken(idToken: String): String? {
-        val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
-            .setAudience(listOf("1030506683349-ism7bd2gihcggefm9gmdsejb6lelcq6d.apps.googleusercontent.com"))
-            .build()
-
-        val clientSchlüssel = "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"
-        val token: GoogleIdToken? = verifier.verify(idToken)
-        val email = token?.payload?.email ?: return null
-
-        transaction {
-            val exists = User.select { User.email eq email }.count() > 0
-            if (!exists) {
-                User.insert {
-                    it[User.email] = email
-                    it[passwordHash] = "google_oauth"
-                }
-            }
+    fun getUserByEmail(email: String): Boolean {
+        return transaction {
+            User.select { User.email eq email }.count() > 0
         }
+    }
 
-        return email
+    fun verifyGoogleIdToken(idToken: String): GoogleIdToken.Payload? {
+        val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
+            .setAudience(listOf("1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com"))
+            .build()
+        debugLog(verifier)
+        val clientSchlüssel = "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"
+        val token: GoogleIdToken? = verifier.verify(idToken)
+        if (token != null) {
+            debugLog(token)
+        }
+        return token?.payload
     }
 
     fun generateJwt(email: String): String {
@@ -378,4 +386,5 @@ class Service{
         logFile.parentFile.mkdirs()
         logFile.appendText(logEntry)
     }
+
 }

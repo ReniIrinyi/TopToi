@@ -46,7 +46,7 @@ export default {
     login(data) {
         return apiClient.post('/user/login', data);
     },
-    loginWithGoogle(idToken) {
+    loginOrRegisterWithGoogle(idToken) {
         return apiClient.post('/auth/google', { idToken });
     }
 };

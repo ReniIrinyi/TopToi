@@ -1,44 +1,43 @@
 <template>
   <div class="toilet-card">
-      <button class="close-btn" @click="$emit('close')">✖</button>
-      <h2>{{ toilet.name }}</h2>
+      <button class="close-btn" @click="emit('close')">✖</button>
+      <h2>{{  props.toilet.name }}</h2>
 
-    <div class="distance" v-if="toilet.distance">
-      {{ toilet.distance }} m
+    <div class="distance" v-if=" props.toilet.distance">
+      {{  props.toilet.distance }} m
     </div>
 
       <div class="tags-container">
         <div class="tags">
-          <span v-if="toilet.tags?.BABY_ROOM">🍼 {{this.t('LABEL_WICKELRAUM')}}</span>
-          <span v-if="toilet.tags?.WHEELCHAIR_ACCESSIBLE">♿{{this.t('LABEL_ROHLSTUHLGERECHT')}}</span>
-          <span v-if="toilet.priceCHF !== null">{{ toilet.priceCHF }} CHF</span>
-          <span v-if="toilet.openHours.length">{{ toilet.openHours }}</span>
-          <div class="ratings">
-            <button @click="submitVote(1)" :disabled="hasVoted">👍 {{ positiveVotes }}</button>
-            <button @click="submitVote(-1)" :disabled="hasVoted">👎 {{ negativeVotes }}</button>
+          <span v-if=" props.toilet.tags?.BABY_ROOM">🍼 {{t('LABEL_WICKELRAUM')}}</span>
+          <span v-if=" props.toilet.tags?.WHEELCHAIR_ACCESSIBLE">♿{{t('LABEL_ROHLSTUHLGERECHT')}}</span>
+          <span v-if=" props.toilet.priceCHF !== null">{{  props.toilet.priceCHF }} CHF</span>
+          <span v-if=" props.toilet.openHours.length">{{  props.toilet.openHours }}</span>
+          <div style="margin: 12px 0; text-align: center;">
+            <span v-for="star in 5" :key="star" :style="{ fontSize: '24px', color: rating >= star ? '#ffd055' : '#bbb' }">★</span>
           </div>
         </div>
         <div class="add-note">
-          <button @click="showNoteForm = !showNoteForm"> {{this.t('LABEL_ADD_NOTE')}}</button>
+          <button @click="showNoteForm = !showNoteForm"> {{t('LABEL_ADD_NOTE')}}</button>
         </div>
       </div>
 
     <div class="tags">
-      <button @click="setMode('WALKING')">🚶‍♂️ {{ this.t('LABEL_ZU_FUSS') }}</button>
-      <button @click="setMode('DRIVING')">🚗 {{ this.t('LABEL_AUTO') }}</button>
-      <button @click="setMode('BICYCLING')">🚴‍♀️ {{this.t('LABEL_VELO')}}</button>
+      <button @click="setMode('WALKING')">🚶‍♂️ {{ t('LABEL_ZU_FUSS') }}</button>
+      <button @click="setMode('DRIVING')">🚗 {{ t('LABEL_AUTO') }}</button>
+      <button @click="setMode('BICYCLING')">🚴‍♀️ {{t('LABEL_VELO')}}</button>
     </div>
-    <button class="nav-btn" @click="navigate">🧭 {{this.t('LABEL_ROUTE')}}</button>
+    <button class="nav-btn" @click="navigate">🧭 {{t('LABEL_ROUTE')}}</button>
 
-    <section v-if="toilet.notes?.length">
-      <h3>Megjegyzések</h3>
+    <section v-if=" props.toilet.notes?.length">
+      <h3>{{ t('LABEL_NOTES') }}</h3>
       <div
-          v-for="note in toilet.notes"
+          v-for="note in  props.toilet.notes"
           :key="note.addDate"
           class="note"
           :class="{ 'own-note': isOwnNote(note) }"
       >
-        <p><strong v-if="isOwnNote(note)">Saját jegyzet:</strong> {{ note.text }}</p>
+        <p><strong v-if="isOwnNote(note)">{{ t('LABEL_OWN_NOTES') }}</strong> {{ note.text }}</p>
         <small>{{ note.addDate }}</small>
         <div v-if="note.imageUrl" class="note-image">
           <img :src="note.imageUrl" alt="Megjegyzés kép" />
@@ -49,71 +48,65 @@
     <section>
 
       <div v-if="showNoteForm" class="note-form">
-        <textarea v-model="newNoteText" placeholder="Írd be a megjegyzésed..." rows="3"></textarea>
-        <input type="file" @change="handleImageUpload" />
-        <button @click="submitNote">Mentés</button>
+        <AddNote v-model:rating="rating" v-model:img="imageFile" v-model:note="noteText" ></AddNote>
+        <button @click="submitNote">{{ t('LABEL_SAVE') }}</button>
       </div>
     </section>
   </div>
 </template>
 
-<script>
+<script setup>
 import {translate} from "@/service/translationService.js";
+import {ref} from "vue";
+import AddNote from "@/views/AddNote.vue";
+import api from "@/service/apiService.js";
 
-export default {
-  props: ['toilet', 'currentUserId'],
-  data() {
-    return {
-      newNoteText: '',
-      newNoteImage: null,
-      showNoteForm: false,
-    };
-  },
-  computed: {
-    t() {
-      return translate;
-    },
-    positiveVotes() {
-      return this.toilet.votes?.filter(v => v.value > 0).length || 0;
-    },
-    negativeVotes() {
-      return this.toilet.votes?.filter(v => v.value < 0).length || 0;
-    },
-    hasVoted() {
-      return this.toilet.votes?.some(v => v.userId === this.currentUserId);
-    }
-  },
-  methods: {
-    setMode(mode) {
-      this.$emit('travelMode', { mode });
-    },
-    navigate() {
-      this.$emit('navigate-to', {
-        lat: this.toilet.latitude,
-        lng: this.toilet.longitude
-      });
-    },
-    isOwnNote(note) {
-      return note.userId === this.currentUserId;
-    },
-    handleImageUpload(e) {
-      this.newNoteImage = e.target.files[0];
-    },
-    submitNote() {
-      const noteData = {
-        text: this.newNoteText,
-        image: this.newNoteImage
-      };
-      this.$emit('submit-note', noteData);
-      this.newNoteText = '';
-      this.newNoteImage = null;
-      this.showNoteForm = false;
-    },
-    submitVote(value) {
-      this.$emit('submit-vote', value);
-    }
-  },
-};
+  const props = defineProps({
+    currentUserId: Number,
+    toilet: Object
+  })
+
+  const rating = ref(0)
+  const imageFile = ref(null)
+  const noteText = ref('')
+  const emit = defineEmits(['navigate-to', 'travelMode',]);
+  let showNoteForm = false
+
+  const t = translate;
+
+  function setMode(mode) {
+    emit('travelMode', { mode });
+  }
+
+function navigate() {
+  emit('navigate-to', {
+    lat: props.toilet.latitude,
+    lng: props.toilet.longitude
+  });
+}
+
+function isOwnNote(note) {
+  return note.userId === props.currentUserId;
+}
+
+function submitNote() {
+  const noteData = {
+    userId: props.currentUserId,
+    toiletId:props.toilet,
+    text: noteText.value,
+    image: imageFile.value,
+    rate:rating.value
+  };
+   api.addNote(noteData).then(() => {
+     console.log(noteData)
+     showNoteForm = false;
+   }).catch(err => {
+     console.error("API error:", err);
+     alert(this.t('LABEL_SAVE_FAILED'));
+   });
+}
+
+
 </script>
 
 <style scoped>

@@ -1,51 +1,92 @@
 <template>
   <div>
-    <div
-        id="g_id_onload"
-        :data-client_id="clientId"
-        data-auto_prompt="true"
-        data-callback="handleGoogleLogin"
-    ></div>
-    <div class="g_id_signin" data-type="standard"></div>
+    <div id="g_id_onload"
+         :data-client_id="clientId"
+         data-auto_prompt="true">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard">
+    </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import apiService from "@/service/apiService.js";
+import {onMounted} from "vue";
+import {translate} from "@/service/translationService.js";
 
-export default {
-  name: "GoogleOneTap",
-  props: ['onLogin'],
-  data() {
-    return {
-      clientId: '1030506683349-ism7bd2gihcggefm9gmdsejb6lelcq6d.apps.googleusercontent.com',
+const props = defineProps({
+  onLogin: Function
+});
+
+const clientId = '1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com';
+const t = translate;
+
+defineExpose({
+  triggerPrompt
+});
+
+function triggerPrompt() {
+  if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      setTimeout(() => {
+        if (window.google?.accounts?.id) {
+          initializeGoogleSignIn();
+        } else {
+          console.error("Google API still not available after script load.");
+        }
+      }, 200);
     };
-  },
-  mounted() {
-    window.handleGoogleLogin = (response) => {
-      const idToken = response.credential;
 
-      apiService.loginWithGoogle(idToken)
-          .then(res => {
-            const token = res.data.token;
-            localStorage.setItem('token', token);
-
-            if (this.onLogin) {
-              this.onLogin(token);
-            }
-          })
-          .catch(() => {
-            alert("Sikertelen bejelentkezés Google ID tokennel");
-          });
-    };
-
-    if (!window.google) {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
+    document.head.appendChild(script);
+  } else {
+    initializeGoogleSignIn();
   }
-};
+}
+
+function initializeGoogleSignIn() {
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleLogin
+  });
+
+  window.google.accounts.id.renderButton(
+      document.querySelector('.g_id_signin'),
+      {
+        theme: 'outline',
+        size: 'large',
+        type: 'standard',
+        text: 'continue_with'
+      }
+  );
+
+  window.google.accounts.id.prompt();
+}
+
+function handleGoogleLogin(response) {
+  const idToken = response.credential;
+  console.log(idToken)
+
+  apiService.loginOrRegisterWithGoogle(idToken)
+      .then(res => {
+        const token = res.data.token;
+        localStorage.setItem('token', token);
+
+        if (props.onLogin) {
+          props.onLogin(token);
+        }
+      })
+      .catch(() => {
+        alert(t('ERROR_AUTHENTIFICATION'));
+      });
+}
+
+onMounted(() => {
+  triggerPrompt();
+});
 </script>

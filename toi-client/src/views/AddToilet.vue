@@ -2,8 +2,8 @@
   <div class="overlay">
     <div class="dialog">
       <div class="dialog-header">
-        <h2>{{this.t("LABEL_ADD_TOILET")}}</h2>
-        <button class="close-btn" @click="$emit('close')">✖</button>
+        <h2>{{t("LABEL_ADD_TOILET")}}</h2>
+        <button class="close-btn" @click="emit('close')">✖</button>
       </div>
       <form @submit.prevent="submitForm">
         <div style="margin-bottom: 6px;">
@@ -16,104 +16,77 @@
           <input class="input-element" id="price" v-model.number="form.priceCHF" type="number" style="width: 100%; padding: 6px;" />
         </div>
         <label><input type="checkbox" v-model="form.tags.BABY_ROOM" /> {{ t('LABEL_WICKELRAUM') }}</label>
-        <label><input type="checkbox" v-model="form.tags.WHEELCHAIR_ACCESSIBLE" /> {{this.t('LABEL_ROLLSTUHLGERECHT')}}</label>
+        <label><input type="checkbox" v-model="form.tags.WHEELCHAIR_ACCESSIBLE" /> {{t('LABEL_ROLLSTUHLGERECHT')}}</label>
 
-        <div>
-          <textarea class="input-element" v-model="noteText" placeholder="Schildere anderen deine Meinung zu dieser Toalet ..." rows="3" style="width:100%; margin-top:8px;"></textarea>
-        </div>
+        <AddNote v-model:rating="rating" v-model:img="imageFile" v-model:note="noteText" ></AddNote>
 
-        <div style="margin: 12px 0; text-align: center;">
-        <span v-for="star in 5" :key="star" @click="setRating(star)" :style="{ cursor: 'pointer', fontSize: '24px', color: rating >= star ? '#ffd055' : '#bbb' }">★</span>
-        </div>
-
-        <button class="btn submit-btn" type="button" @click="triggerFileInput">📸 Fotos hinzufügen</button>
-        <input style="display:none" type="file" accept="image/*" capture="environment" @change="handleFile" />
-
-        <button class="btn submit-btn" type="submit">{{ this.t('LABEL_SPEICHERN') }}</button>
+        <button class="btn submit-btn" type="submit">{{ t('LABEL_SPEICHERN') }}</button>
       </form>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import api from '../service/apiService.js';
 import {translate} from "@/service/translationService.js";
+import AddNote from "@/views/AddNote.vue";
+import {ref} from "vue";
+const form= ref( {
+  name: '',
+      addDate: new Date().toISOString(),
+      category: 'public',
+      openHours: [],
+      tags: { BABY_ROOM: false, WHEELCHAIR_ACCESSIBLE: false },
+      entryMethod: 'free',
+      priceCHF: 0,
+      code: '',
+      latitude: null,
+      longitude: null,
+})
 
-export default {
-  data() {
-    return {
-      form: {
-        name: '',
-        addDate: new Date().toISOString(),
-        category: 'public',
-        openHours: [],
-        tags: { BABY_ROOM: false, WHEELCHAIR_ACCESSIBLE: false },
-        entryMethod: 'free',
-        priceCHF: 0,
-        code: '',
-        latitude: null,
-        longitude: null,
-      },
-      noteText: '',
-      rating: 0,
-      imageFile: null
-    };
-  },
-  computed: {
-    t(){
-      return translate;
-    },
-  },
-  methods: {
-    triggerFileInput() {
-      this.$refs.fileInput.click();
-    },
-    handleFile(event) {
-      this.imageFile = event.target.files[0];
-    },
-    setRating(star) {
-      this.rating = star;
-      this.form.rating = star;
-    },
-    submitForm() {
-      console.log('submit..')
-      navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            this.form.latitude = pos.coords.latitude;
-            this.form.longitude = pos.coords.longitude;
+const rating = ref(0)
+const imageFile = ref(null)
+const noteText = ref('')
 
+const t = translate;
+const emit = defineEmits(['close']);
 
-            const formData = new FormData();
-            for (const key in this.form) {
-              const val = this.form[key];
-              if (typeof val === 'object') {
-                formData.append(key, JSON.stringify(val));
-              } else {
-                formData.append(key, val);
-              }
-            }
-            formData.append('note', this.noteText);
-            formData.append('vote', this.vote);
-            if (this.imageFile) {
-              formData.append('image', this.imageFile);
-            }
+function submitForm() {
+  console.log('submit..')
+  navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        form.latitude = pos.coords.latitude;
+        form.longitude = pos.coords.longitude;
 
-            api.addToilet(formData).then(() => {
-              this.$emit('close');
-            }).catch(err => {
-              console.error("API error:", err);
-              alert(this.t('LABEL_SAVE_FAILED'));
-            });
-          },
-          (err) => {
-            console.error("Geolocation error:", err);
-            alert(this.t('LABEL_GEOLOCATION_DENIED'));
+        const formData = new FormData();
+        for (const key in this.form) {
+          const val = this.form[key];
+          if (typeof val === 'object') {
+            formData.append(key, JSON.stringify(val));
+          } else {
+            formData.append(key, val);
           }
-      );
-    }
+        }
+        formData.append('note', noteText.value);
+        formData.append('vote', rating.value);
+        if (imageFile) {
+          formData.append('image', imageFile?.value);
+        }
 
-  },
-};
+        api.addToilet(formData).then(() => {
+          console.log(formData)
+          emit('close');
+        }).catch(err => {
+          console.error("API error:", err);
+          alert(this.t('LABEL_SAVE_FAILED'));
+        });
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        alert(this.t('LABEL_GEOLOCATION_DENIED'));
+      }
+  );
+}
 </script>
 
 <style scoped>

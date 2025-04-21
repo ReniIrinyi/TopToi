@@ -14,146 +14,147 @@
         :center="userPosition"
         ref="map"
         @map-moved="onMapMoved"
+        @onAuthChange="loadToilets"
 
     />
-    <ToiletCard   @travelMode="travelTo"  @navigate-to="panTo" v-if="selectedToilet" :toilet="selectedToilet" />
+    <ToiletCard @close="loadToilets"  @travelMode="travelTo"  @navigate-to="panTo" v-if="selectedToilet" :toilet="selectedToilet" />
     <button v-if="!showToiletList && !showAddToilet" class="btn btn-wc" @click="showToiletList =true">🚻</button>
     <button v-if="!showAddToilet && !showToiletList" class="btn btn-add" @click="showAddToilet =true">+</button>
-    <AddToilet v-if="showAddToilet" @close="showAddToilet = false" />
+    <AddToilet v-if="showAddToilet" @close="showAddToilet = false; loadToilets" />
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue';
 import MapComponent from './Map.vue';
 import ToiletCard from './ToiletCard.vue';
 import ToiletList from './ToiletList.vue';
 import AddToilet from './AddToilet.vue';
 import apiService from '@/service/apiService.js';
-import Header from './Header.vue';
 
-export default {
-  components: { MapComponent, ToiletCard, ToiletList, AddToilet, Header },
-  data() {
-    return {
-      selectedToilet: null,
-      toilets: [],
-      showToiletList: true,
-      showAddToilet: false,
-      lastFetchedPosition: null,
-      userPosition: {lat:null, lng:null}
-    };
-  },
-  computed: {
-    sortedToilets() {
-        return this.toilets?.sort((a, b) => {
-          const locA = a?.location || a?.geometry?.location;
-          const locB = b?.location || b?.geometry?.location;
+const selectedToilet = ref(null);
+const toilets = ref([]);
+const showToiletList = ref(false);
+const showAddToilet = ref(false);
+const lastFetchedPosition = ref(null);
+const userPosition = ref({ lat: null, lng: null });
 
-          if (!this.isValidCoordinate(locA) || !this.isValidCoordinate(locB)) return 0;
+const map = ref(null);
 
-          const distA = this.getDistance(this.userPosition, locA);
-          const distB = this.getDistance(this.userPosition, locB);
-          return distA - distB;
-        });
-      }
-  },
-  mounted() {
-    navigator.geolocation.watchPosition(
-        (pos) => {
-          const newPos = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude
-          };
+const sortedToilets = computed(() => {
+  return toilets.value?.sort((a, b) => {
+    const locA = a?.location || a?.geometry?.location;
+    const locB = b?.location || b?.geometry?.location;
 
-          this.userPosition = newPos;
+    if (!isValidCoordinate(locA) || !isValidCoordinate(locB)) return 0;
 
-          if (!this.lastFetchedPosition) {
-            this.lastFetchedPosition = { ...newPos };
-            this.loadToilets();
-            return;
-          }
+    const distA = getDistance(userPosition.value, locA);
+    const distB = getDistance(userPosition.value, locB);
+    return distA - distB;
+  });
+});
 
-          const dist = this.getDistance(this.lastFetchedPosition, newPos);
+onMounted(() => {
+  navigator.geolocation.watchPosition(
+      (pos) => {
+        const newPos = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        };
 
-          if (dist > 1) {
-            this.loadToilets();
-            this.lastFetchedPosition = { ...newPos };
-          }
-        },
-        err => {
-          console.error(err);
-          // Fallback
-          /*if (!this.userPosition) {
-            this.userPosition = { lat: 47.2925, lng: 7.9592 };
-            this.loadToilets();
-          }*/
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
+        userPosition.value = newPos;
+
+        if (!lastFetchedPosition.value) {
+          lastFetchedPosition.value = { ...newPos };
+          loadToilets();
+          return;
         }
-    );
-  },
-  methods: {
-    isValidCoordinate(loc) {
-      return loc &&
-          typeof loc.lat === 'number' &&
-          typeof loc.lng === 'number' &&
-          isFinite(loc.lat) &&
-          isFinite(loc.lng);
-    },
-    onMapMoved(center) {
-      const dist = this.lastFetchedPosition
-          ? this.getDistance(this.lastFetchedPosition, center)
-          : Infinity;
 
-      if (dist > 1) {
-        this.userPosition = center;
-        this.lastFetchedPosition = center;
-        this.loadToilets();
+        const dist = getDistance(lastFetchedPosition.value, newPos);
+
+        if (dist > 1) {
+          loadToilets();
+          lastFetchedPosition.value = { ...newPos };
+        }
+      },
+      err => {
+        console.error(err);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
       }
-    },
-    travelTo(method){
-      this.$refs.map.setTravelMode(method)
-    },
-    panTo(location) {
-      this.$refs.map.drawRoute(
-          this.userPosition,
-          { lat: location.lat, lng: location.lng }
-      );
-    },
-    loadToilets() {
-      console.log('get toalets...')
-      apiService.getToilets(this.userPosition?.lat, this.userPosition?.lng).then(res => {
-        console.log(res)
-        this.toilets = res.data.filter(t => t.id);
-      });
-    },
-    selectToilet(toilet) {
-      this.selectedToilet = toilet;
-    },
-    closeToiletList() {
-      this.showToiletList = false;
-    },
-    getDistance(pos1, pos2) {
-      const R = 6371;
-      const toRad = x => (x * Math.PI) / 180;
+  );
+  if(toilets.value.length>0){
+    showToiletList.value = true
+  } else {
+    showToiletList.value = false
+  }
+});
 
-      const dLat = toRad(pos2.lat - pos1.lat);
-      const dLon = toRad(pos2.lng - pos1.lng);
+function isValidCoordinate(loc) {
+  return loc &&
+      typeof loc.lat === 'number' &&
+      typeof loc.lng === 'number' &&
+      isFinite(loc.lat) &&
+      isFinite(loc.lng);
+}
 
-      const a =
-          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(toRad(pos1.lat)) * Math.cos(toRad(pos2.lat)) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+function onMapMoved(center) {
+  const dist = lastFetchedPosition.value
+      ? getDistance(lastFetchedPosition.value, center)
+      : Infinity;
 
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
+  if (dist > 1) {
+    userPosition.value = center;
+    lastFetchedPosition.value = center;
+    loadToilets();
+  }
+}
 
-  },
-};
+function travelTo(method) {
+  map.value?.setTravelMode(method);
+}
+
+function panTo(location) {
+  map.value?.drawRoute(userPosition.value, {
+    lat: location.lat,
+    lng: location.lng
+  });
+}
+
+function loadToilets() {
+  console.log('get toilets...');
+  apiService.getToilets(userPosition.value?.lat, userPosition.value?.lng).then(res => {
+    console.log(res);
+    toilets.value = res.data.filter(t => t.id);
+  });
+}
+
+function selectToilet(toilet) {
+  selectedToilet.value = toilet;
+}
+
+function closeToiletList() {
+  showToiletList.value = false;
+}
+
+function getDistance(pos1, pos2) {
+  const R = 6371;
+  const toRad = x => (x * Math.PI) / 180;
+
+  const dLat = toRad(pos2.lat - pos1.lat);
+  const dLon = toRad(pos2.lng - pos1.lng);
+
+  const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(pos1.lat)) * Math.cos(toRad(pos2.lat)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 </script>
 
 <style scoped>

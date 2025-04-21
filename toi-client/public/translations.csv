@@ -5,6 +5,7 @@ LABEL_REGISTRATION;Regisztrâciô;Registrieren;Registration
 LABEL_NEAR_TOILETS;Közeli mosdôk;Toaletten in der Nähe;Near Toilets
 LABEL_EMAIL;Email;Email
 LABEL_PASSWORD;Jelszô;Passwort;Password
+LABEL_CONFIRM_PASSWORD;Jelszô megerösitése;Passwort bestätigen;Confirm password
 LABEL_OR;vagy;oder;or
 LABEL_CLOSE;Bezârâs;Schliessen;Close
 LABEL_ADD_TOILET;Mosdô hozzâadâsa;WC hinzufügen;Add Toilet
@@ -26,3 +27,11 @@ LABEL_NOTES;Megjegyzések;Notizen;Notes
 LABEL_OWN_NOTES;Saját megjegyzések;Eigene Notizen;Own Notes
 LABEL_ADD_NOTE;Megjegyzés hozzáadása;Notizen hinzufügen;Add Notes
 LABEL_VON_DIR;töled;entfernt;Near
+LABEL_CONFIRM;Megerösités;Bestätigen;Confirm
+ERROR_AUTHENTIFICATION;Hibás email vagy jelszó;Email oder Passwort falsch;Email or Password incorrect
+ERROR_DUPLICATE_EMAIL;Ez az Email-cím már létezik;Ein Konto mit dieser Email-Adresse existiert bereits;Email or Password incorrect
+ERROR_EMAIL_NOT_THE_SAME;Email címek nem egyeznek;Email-Adressen stimmen nicht überein;Email or Password incorrect
+WARN_AUTHENTIFICATION_SUCCESS;Sikeres regisztráció;Registrierung erfolgreich;Email or Password incorrect
+LABEL_CONTINUE_WITH_GOOGLE;Regisztráció Google fiókkal;Registrieren mit Google Account;Continue with Google
+LABEL_CONTINUE_WITH_EMAIL;Regisztráció Email fiókkal;Registrieren mit Email Account;Continue with Email
+LABEL_OR_CONTINUE_WITH;vagy;oder;or

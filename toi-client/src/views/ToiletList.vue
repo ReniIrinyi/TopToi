@@ -1,11 +1,11 @@
 <template>
   <div class="nearby-list">
     <div class="header">
-      <h2>Közeli mosdók</h2>
-      <button class="close-btn" @click="$emit('close')">✖</button>
+      <h2>{{ t('LABEL_NEAR_TOILETS') }}</h2>
+      <button class="close-btn" @click="emit('close')">✖</button>
     </div>
     <ul>
-      <li v-for="toilet in nearbyToilets" :key="toilet.id" @click="$emit('selected-toilet', toilet)">
+      <li v-for="toilet in nearbyToilets" :key="toilet.id" @click="emit('selected-toilet', toilet)">
         <div class="toilet-name">{{ toilet.name }}</div>
         <div class="distance">{{ toilet.distance }} m</div>
       </li>
@@ -13,32 +13,40 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: ['userPosition', 'toilets'],
-  computed: {
-    nearbyToilets() {
-      return this.toilets.map(toilet => {
-        const distance = this.calculateDistance(toilet.latitude, toilet.longitude);
-        return { ...toilet, distance };
-      }).sort((a, b) => a.distance - b.distance).slice(0, 10);
-    },
-  },
-  methods: {
-    calculateDistance(lat, lng) {
-      const R = 6371;
-      const dLat = (lat - this.userPosition.lat) * Math.PI / 180;
-      const dLng = (lng - this.userPosition.lng) * Math.PI / 180;
-      const a =
-          Math.sin(dLat / 2) ** 2 +
-          Math.cos(this.userPosition.lat * Math.PI / 180) *
-          Math.cos(lat * Math.PI / 180) *
-          Math.sin(dLng / 2) ** 2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return Math.round(R * c * 1000);
-    },
-  },
-};
+<script setup>
+import { computed } from 'vue';
+import { translate } from "@/service/translationService.js";
+
+const props = defineProps({
+  userPosition: Object,
+  toilets: Array
+});
+
+const emit = defineEmits(['close', 'selected-toilet']);
+const t = translate;
+
+function calculateDistance(lat, lng) {
+  const R = 6371;
+  const dLat = (lat - props.userPosition.lat) * Math.PI / 180;
+  const dLng = (lng - props.userPosition.lng) * Math.PI / 180;
+  const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(props.userPosition.lat * Math.PI / 180) *
+      Math.cos(lat * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 1000);
+}
+
+const nearbyToilets = computed(() => {
+  return props.toilets
+      .map(toilet => ({
+        ...toilet,
+        distance: calculateDistance(toilet.latitude, toilet.longitude)
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 10);
+});
 </script>
 
 <style scoped>
