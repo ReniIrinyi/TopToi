@@ -38,18 +38,22 @@ async function register() {
     });
 
     if (res.status === 200) {
-      alert(t('WARN_AUTHENTIFICATION_SUCCESS'));
-      localStorage.setItem('userEmail', email.value);
-      emit('logged-in', email.value);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('userEmail', res.data.value);
+      emit('logged-in', res.data);
+      emit('close');
     }
   } catch (err) {
     alert(t('ERROR_DUPLICATE_EMAIL'));
   }
 }
 
-function handleGoogleLoginSuccess(token) {
-  localStorage.setItem('token', token);
-  emit('logged-in', 'close');
+function handleGoogleLoginSuccess(res) {
+  console.log(res)
+  localStorage.setItem('token', res.data.token);
+  localStorage.setItem('userEmail', res.data.email);
+  emit('logged-in', res.data);
+  emit('close');
 }
 
 </script>

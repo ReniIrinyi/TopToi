@@ -36,7 +36,7 @@
 
 
     <LoginDialog v-if="showLogin" @close="showLogin = false" @logged-in="onLogin" />
-    <RegisterDialog v-if="showRegister" @close="showRegister = false" @registered="onRegister" />
+    <RegisterDialog @logged-in="onLogin" v-if="showRegister" @close="showRegister = false"  />
   </header>
 </template>
 
@@ -64,19 +64,13 @@ const isLoggedIn = computed(() => {
   return !!localStorage.getItem('token');
 });
 
-function onLogin(email) {
-  userEmail.value = email;
-  console.log(localStorage)
-  userName.value = localStorage.getItem('userName') || 'Felhasználó';
-  userAvatar.value = localStorage.getItem('userAvatar') || 'https://www.gravatar.com/avatar?d=mp';
+function onLogin(data) {
+  console.log(data)
+  userEmail.value = data.email;
+  userName.value = data.name
+  userAvatar.value = data.imgUrl || data.img || 'https://www.gravatar.com/avatar?d=mp';
   showLogin.value = false;
   emit('onLogin')
-}
-
-function onRegister(email) {
-  userEmail.value = email;
-  showRegister.value = false;
-  emit('onAuthChange')
 }
 
 function toggleDropdown() {

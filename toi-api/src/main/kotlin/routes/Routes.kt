@@ -107,7 +107,11 @@ fun Route.toiletRoute(service:Service){
             val request = call.receive<UserRequest>()
             val success = service.createLocalUser(request)
             if (success) {
-                call.respond(HttpStatusCode.Created, "User registered successfully")
+                val token = service.generateJwt(request.email)
+                val user = service.getUserByEmail(request.email)
+                println(user)
+
+                call.respond(HttpStatusCode.Created, mapOf("token" to token, "data" to user))
             } else {
                 call.respond(HttpStatusCode.Conflict, "User already exists")
             }
@@ -115,13 +119,14 @@ fun Route.toiletRoute(service:Service){
 
         post("/login") {
             val request = call.receive<UserRequest>()
-            service.debugLog(request)
             val authenticated = service.authenticateUser(request)
             service.debugLog(authenticated)
             if (authenticated) {
                 val token = service.generateJwt(request.email)
-                service.debugLog(token)
-                call.respond(HttpStatusCode.OK, mapOf("token" to token))
+                val user = service.getUserByEmail(request.email)
+                println(user)
+
+                call.respond(HttpStatusCode.OK, mapOf("token" to token, "data" to user))
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             }
@@ -131,14 +136,15 @@ fun Route.toiletRoute(service:Service){
     route("/auth") {
         post("/google") {
             val authRequest = call.receive<GoogleAuthRequest>()
-            val payload = service.verifyGoogleIdToken(authRequest.idToken)
-
-            if (payload != null) {
+            val token = service.verifyGoogleIdToken(authRequest.idToken)
+            val payload= token?.payload
+            if (payload?.email != null) {
                 val email = payload.email
                 val name = payload["name"] as? String
                 val picture = payload["picture"] as? String
 
-                val exists = service.getUserByEmail(email)
+                val exists = service.isUserExist(email)
+                service.debugLog(exists)
 
                 if (!exists) {
                     if (name != null) {
@@ -148,8 +154,12 @@ fun Route.toiletRoute(service:Service){
                     }
                 }
 
-                val token = service.generateJwt(email)
-                call.respond(HttpStatusCode.OK, mapOf("token" to token))
+                val jwtToken = service.generateJwt(email)
+
+                val user = service.getUserByEmail(email)
+                service.debugLog("here kommt userobject line 160")
+                service.debugLog(user.toString())
+                call.respond(HttpStatusCode.OK, mapOf("token" to jwtToken, "data" to user.toString() ))
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid Google ID Token")
             }

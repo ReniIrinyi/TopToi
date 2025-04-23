@@ -56,8 +56,8 @@ class Service{
                 it[User.email] = email
                 it[passwordHash] = "google_oauth"
                 it[authProvider] = AuthProvider.ENUM_GOOGLE
-                it[User.name] = name
                 it[User.imgUrl]=imgUrl
+                it[User.name] = name
             }
         }
     }
@@ -71,23 +71,44 @@ class Service{
         }
     }
 
-    fun getUserByEmail(email: String): Boolean {
+    fun getUserByEmail(email: String): database.model.User? {
+        return transaction {
+            User.select { User.email eq email }
+                .map {
+                    try {
+                        val imageBytes = it[User.img]?.bytes ?: ByteArray(0)
+                        database.model.User(
+                            id = it[User.id],
+                            email = it[User.email],
+                            name = it[User.name],
+                            imgUrl = it[User.imgUrl],
+                            authProvider = it[User.authProvider],
+                            passwordHash = "",
+                            img = imageBytes
+                        )
+                    } catch (e: Exception) {
+                        debugLog("Mapping hiba: ${e.message}")
+                        null
+                    }
+                }
+                .singleOrNull()
+        }
+    }
+
+
+    fun isUserExist(email: String): Boolean {
         return transaction {
             User.select { User.email eq email }.count() > 0
         }
     }
 
-    fun verifyGoogleIdToken(idToken: String): GoogleIdToken.Payload? {
+    fun verifyGoogleIdToken(idToken: String): GoogleIdToken? {
         val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
             .setAudience(listOf("1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com"))
             .build()
-        debugLog(verifier)
         val clientSchlüssel = "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"
         val token: GoogleIdToken? = verifier.verify(idToken)
-        if (token != null) {
-            debugLog(token)
-        }
-        return token?.payload
+        return token
     }
 
     fun generateJwt(email: String): String {
@@ -330,11 +351,11 @@ class Service{
         transaction {
 
             Note.insert {
-                it[Note.toiletId] = toiletID.toInt()
-                it[Note.userId] = userID.toInt()
+                it[toiletId] = toiletID.toInt()
+                it[userId] = userID.toInt()
                 it[note] = noteText
                 it[addDate] = Instant.now()
-                it[Note.img] = ExposedBlob(imageBytes)
+                it[img] = ExposedBlob(imageBytes)
             }
         }
 

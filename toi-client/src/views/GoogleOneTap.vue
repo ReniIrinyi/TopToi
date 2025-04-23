@@ -74,11 +74,9 @@ function handleGoogleLogin(response) {
 
   apiService.loginOrRegisterWithGoogle(idToken)
       .then(res => {
-        const token = res.data.token;
-        localStorage.setItem('token', token);
-
+        console.log(res)
         if (props.onLogin) {
-          props.onLogin(token);
+          props.onLogin(res);
         }
       })
       .catch(() => {
