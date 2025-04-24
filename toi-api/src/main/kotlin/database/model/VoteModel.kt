@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class VoteModel(
-    val id: Int,
-    val toiletId: Int,
-    val userId: Int,
-    val value: Boolean
+    val id: Int?=null,
+    val toiletId: Int?=null,
+    val userId: Int?=null,
+    val value: Int?=null
 )

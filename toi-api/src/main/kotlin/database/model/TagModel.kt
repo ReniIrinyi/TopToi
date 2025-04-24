@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TagModel(
-    val toiletId: Int,
-    val babyRoom: Boolean,
-    val accessible: Boolean
+    val toiletId: Int? = null,
+    val babyRoom: Boolean? = null,
+    val accessible: Boolean? = null
 )

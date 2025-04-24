@@ -136,3 +136,19 @@ here
 []
 [2025-04-24 18:15:34] [Service.kt:132 -> fetchToilets()]
 []
+[2025-04-24 18:49:53] [unknown source]
+here
+[2025-04-24 18:49:53] [Service.kt:129 -> fetchToilets()]
+[]
+[2025-04-24 18:52:03] [unknown source]
+here
+[2025-04-24 18:52:03] [Service.kt:129 -> fetchToilets()]
+[]
+[2025-04-24 19:10:47] [unknown source]
+here
+[2025-04-24 19:10:48] [Service.kt:129 -> fetchToilets()]
+[]
+[2025-04-24 19:10:56] [unknown source]
+here
+[2025-04-24 19:10:56] [Service.kt:129 -> fetchToilets()]
+[]

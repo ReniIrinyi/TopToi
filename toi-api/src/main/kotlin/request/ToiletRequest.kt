@@ -12,5 +12,8 @@ data class ToiletRequest(
     val code: String?,
     val latitude: Double,
     val longitude: Double,
-    val tags: TagDTO
+    val tags: TagDTO? = null,
+    val vote: Int? = null,
+    val note: String? = null,
+    val img: String? = null
 )

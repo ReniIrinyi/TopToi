@@ -20,9 +20,8 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -37,114 +36,167 @@ class Service{
     private var nextId = 1
 
     fun createLocalUser(request: UserRequest): Boolean {
-        val hashedPassword = BCrypt.hashpw(request.password, BCrypt.gensalt())
-        return transaction {
-            val exists = User.select { User.email eq request.email }.count() > 0
-            if (exists) return@transaction false
-            User.insert {
-                it[email] = request.email
-                it[passwordHash] = hashedPassword
-                it[authProvider] = AuthProvider.ENUM_LOCAL
+        return try {
+            transaction {
+                if (User.select { User.email eq request.email }.count() > 0) return@transaction false
+
+                User.insert {
+                    it[email] = request.email
+                    it[password] = BCrypt.hashpw(request.password, BCrypt.gensalt())
+                    it[authProvider] = AuthProvider.ENUM_LOCAL.name
+                    it[name] = request.name
+                    it[imgUrl] = request.imgUrl
+                }
+                true
             }
-            true
+        } catch (e: Exception) {
+            debugLog("createLocalUser error: ${e.message}")
+            false
         }
     }
 
-    fun createGoogleUser(email: String, name:String, imgUrl:String): Unit {
-        transaction {
-            User.insert {
-                it[User.email] = email
-                it[passwordHash] = "google_oauth"
-                it[authProvider] = AuthProvider.ENUM_GOOGLE
-                it[User.imgUrl]=imgUrl
-                it[User.name] = name
+    fun createGoogleUser(email: String, name: String, imgUrl: String):Boolean {
+       return try {
+            transaction {
+                User.insert {
+                    it[User.email] = email
+                    it[password] = "google_oauth"
+                    it[authProvider] = AuthProvider.ENUM_GOOGLE.name
+                    it[User.name] = name
+                    it[User.imgUrl] = imgUrl
+                }
+                true
             }
+        } catch (e: Exception) {
+            debugLog("createGoogleUser error: ${e.message}")
+           false
         }
     }
+
 
     fun authenticateUser(request: UserRequest): Boolean {
-        return transaction {
-            val userRow = User.select { User.email eq request.email }.singleOrNull() ?: return@transaction false
-            if (userRow[User.authProvider] != AuthProvider.ENUM_LOCAL) return@transaction false
-            val hash = userRow[User.passwordHash]
-            BCrypt.checkpw(request.password, hash)
+        return try {
+            transaction {
+                val userRow = User.select { User.email eq request.email }.singleOrNull() ?: return@transaction false
+                if (userRow[User.authProvider] != AuthProvider.ENUM_LOCAL.name) return@transaction false
+                BCrypt.checkpw(request.password, userRow[User.password])
+            }
+        } catch (e: Exception) {
+            debugLog("authenticateUser error: ${e.message}")
+            false
         }
     }
 
     fun getUserByEmail(email: String): database.model.User? {
-        return transaction {
-            User.select { User.email eq email }
-                .map {
-                    try {
-                        val imageBytes = it[User.img]?.bytes ?: ByteArray(0)
+        return try {
+            transaction {
+                User.select { User.email eq email }
+                    .mapNotNull {
+                        val userId = it[User.id]
+
+                        val notes = Note.select { Note.userId eq userId }.map { noteRow ->
+                            NoteModel(
+                                id = noteRow[Note.id],
+                                toiletId = noteRow[Note.toiletId],
+                                userId = userId,
+                                note = noteRow[Note.note],
+                                addDate = noteRow[Note.addDate].toString(),
+                                image = noteRow[Note.img]?.bytes
+                            )
+                        }
+
+                        val votes = Vote.select { Vote.userId eq userId }.map { voteRow ->
+                            VoteModel(
+                                id = voteRow[Vote.id],
+                                toiletId = voteRow[Vote.toiletId],
+                                userId = userId,
+                                value = voteRow[Vote.value]
+                            )
+                        }
+
                         database.model.User(
-                            id = it[User.id],
+                            id = userId,
                             email = it[User.email],
-                            name = it[User.name],
-                            imgUrl = it[User.imgUrl],
+                            name = it[User.name] ?: "",
                             authProvider = it[User.authProvider],
-                            img = imageBytes
+                            imgUrl = it[User.imgUrl],
+                            img = it[User.img]?.bytes,
+                            notes = notes,
+                            votes = votes
                         )
-                    } catch (e: Exception) {
-                        debugLog("Mapping hiba: ${e.message}")
-                        null
-                    }
-                }
-                .singleOrNull()
+                    }.singleOrNull()
+            }
+        } catch (e: Exception) {
+            debugLog("getUserByEmail error: ${e.message}")
+            null
         }
     }
-
 
     fun isUserExist(email: String): Boolean {
-        return transaction {
-            User.select { User.email eq email }.count() > 0
+        return try {
+            transaction {
+                User.select { User.email eq email }.count() > 0
+            }
+        } catch (e: Exception) {
+            debugLog("isUserExist error: ${e.message}")
+            false
         }
     }
 
+
     fun verifyGoogleIdToken(idToken: String): GoogleIdToken? {
-        val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
-            .setAudience(listOf("1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com"))
-            .build()
-        val clientSchlüssel = "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"
-        val token: GoogleIdToken? = verifier.verify(idToken)
-        return token
+        try {
+            val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
+                .setAudience(listOf("1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com"))
+                .build()
+            val clientSchlüssel = "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"
+            val token: GoogleIdToken? = verifier.verify(idToken)
+            return token
+        } catch (e:Exception){
+            debugLog("verifyGoogleIdToken error: ${e.message}")
+            return null
+        }
     }
 
     fun generateJwt(email: String): String {
-        val fileConfig = ConfigFactory.parseFile(File("src/main/resources/application.conf"))
-        val secret = fileConfig.getString("jwt.secret")
+        try {
+            val fileConfig = ConfigFactory.parseFile(File("src/main/resources/application.conf"))
+            val secret = fileConfig.getString("jwt.secret")
 
-        val algorithm = Algorithm.HMAC256(secret)
+            val algorithm = Algorithm.HMAC256(secret)
 
-        return JWT.create()
-            .withSubject("UserAuth")
-            .withClaim("email", email)
-            .withIssuedAt(Date())
-            .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 Std
-            .sign(algorithm)
+            return JWT.create()
+                .withSubject("UserAuth")
+                .withClaim("email", email)
+                .withIssuedAt(Date())
+                .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 24 Std
+                .sign(algorithm)
+        } catch (e:Exception){
+            debugLog("generateJwtError: ${e.message}")
+            return ""
+        }
+
     }
 
     suspend fun fetchToilets(lat: Double, lng: Double): List<ToiletModel> {
-        val googleToilets = fetchGoogleToilets(lat, lng)
-        debugLog(googleToilets)
+        try {
+            val googleToilets = fetchGoogleToilets(lat, lng)
+            debugLog(googleToilets)
 
-        val dbToilets = fetchToiletsFromDatabase()
-        debugLog(dbToilets)
+            val dbToilets = fetchToiletsFromDatabase()
+            debugLog(dbToilets)
 
-        if (googleToilets.isNotEmpty() && dbToilets.isNotEmpty()) {
             val finalToilets = mutableListOf<ToiletModel>()
 
             for (googleToilet in googleToilets) {
-                val matchedToilet = dbToilets.find {
-                    it.latitude == googleToilet.latitude && it.longitude == googleToilet.longitude
-                }
-
-                if (matchedToilet != null) {
+                val match = dbToilets.find { it.latitude == googleToilet.latitude && it.longitude == googleToilet.longitude }
+                if (match != null) {
                     finalToilets.add(
                         googleToilet.copy(
-                            id = matchedToilet.id,
-                            notes = matchedToilet.notes,
-                            votes = matchedToilet.votes
+                            id = match.id,
+                            notes = match.notes,
+                            votes = match.votes,
+                            tags = match.tags
                         )
                     )
                 } else {
@@ -152,230 +204,281 @@ class Service{
                 }
             }
 
-            val unmatchedDbToilets = dbToilets.filter { db ->
-                googleToilets.none { it.latitude == db.latitude && it.longitude == db.longitude }
+            val unmatchedDbToilets = dbToilets.filterNot { db ->
+                finalToilets.any { g -> g.latitude == db.latitude && g.longitude == db.longitude }
             }
 
-            return finalToilets + unmatchedDbToilets
+            finalToilets.addAll(unmatchedDbToilets)
+
+            return finalToilets
+        } catch (e:Exception){
+            debugLog("fetchToilets error: ${e.message}")
+            return emptyList()
         }
 
-        if (googleToilets.isNotEmpty()) {
-            return googleToilets
-        }
-
-        if (dbToilets.isNotEmpty()) {
-            return dbToilets
-        }
-
-        return emptyList()
     }
 
 
-    private fun fetchToiletsFromDatabase(): List<ToiletModel> {
-        return transaction {
-            Toilet.selectAll().map { row ->
-                val toiletId = row[Toilet.id]
-                val notes = Note.select { Note.toiletId eq toiletId }.map {
-                    val imageBytes = it[Note.img].bytes
-                    NoteModel(
-                        userId = it[Note.userId].toString(),
-                        note = it[Note.note],
-                        toiletId = it[Note.toiletId],
-                        img = imageBytes,
-                        addDate = it[Note.addDate].toString()
+    private fun fetchToiletsFromDatabase(): List<ToiletModel>  {
+        return try {
+            transaction{
+                Toilet.selectAll().map { row ->
+                    val toiletId = row[Toilet.id]
+                    val notes = Note.select { Note.toiletId eq toiletId }.map {
+                        val imageBytes = it[Note.img]?.bytes ?: ByteArray(0)
+                        NoteModel(
+                            id = it[Note.id],
+                            userId = it[Note.userId],
+                            note = it[Note.note],
+                            toiletId = it[Note.toiletId],
+                            image = imageBytes,
+                            addDate = it[Note.addDate].toString(),
+                        )
+                    }
+
+                    val votes = Vote.select { Vote.toiletId eq toiletId }.map {
+                        VoteModel(
+                            id = it[Vote.id],
+                            userId = it[Vote.userId],
+                            toiletId = it[Vote.toiletId],
+                            value = it[Vote.value]
+                        )
+                    }
+                    val tagRow = Tag.select { Tag.toiletId eq toiletId }.singleOrNull()
+                    val tags = tagRow?.let {
+                        TagModel(
+                            toiletId = it[Tag.toiletId],
+                            babyRoom = it[Tag.babyRoom] ?: false,
+                            accessible = it[Tag.accessible] ?: false
+                        )
+                    } ?: TagModel()
+
+                    ToiletModel(
+                        id = toiletId,
+                        name = row[Toilet.name],
+                        addDate = row[Toilet.addDate].toString(),
+                        category = row[Toilet.category],
+                        tags = tags,
+                        entryMethod = row[Toilet.entryMethod],
+                        priceCHF = row[Toilet.priceCHF],
+                        code = row[Toilet.code],
+                        latitude = row[Toilet.latitude],
+                        longitude = row[Toilet.longitude],
+                        notes = notes,
+                        votes = votes,
                     )
                 }
-
-                val votes = Vote.select { Vote.toiletId eq toiletId }.map {
-                    VoteModel(
-                        userId = it[Vote.userId].toString(),
-                        value = it[Vote.value]
-                    )
-                }
-
-                ToiletModel(
-                    id = toiletId,
-                    name = row[Toilet.name],
-                    addDate = row[Toilet.addDate].toString(),
-                    category = row[Toilet.category],
-                    openHours = listOf(),
-                    tagModel = TagModel(
-                        BABY_ROOM = row[Toilet.babyRoom],
-                        WHEELCHAIR_ACCESSIBLE = row[Toilet.wheelchairAccessible]
-                    ),
-                    entryMethod = row[Toilet.entryMethod],
-                    priceCHF = row[Toilet.priceCHF],
-                    code = row[Toilet.code],
-                    latitude = row[Toilet.latitude],
-                    longitude = row[Toilet.longitude],
-                    notes = notes,
-                    votes = votes,
-                    userId = "",
-                )
             }
+        } catch (e:Exception){
+            debugLog("fetchToiletsFromDatabase error: ${e.message}")
+            return emptyList()
         }
     }
-
 
 
     private suspend fun fetchGoogleToilets(lat: Double, lng: Double): List<ToiletModel> {
-        val apiKey = "AIzaSyCyiyQzvlmWxLZkMC-SrNriQ3BcUXFII_M"
-        val radius = 1500
-        val keyword = "public toilet"
+        try {
+            val apiKey = "AIzaSyCyiyQzvlmWxLZkMC-SrNriQ3BcUXFII_M"
+            val radius = 1500
+            val keyword = "public toilet"
 
-        val client = HttpClient(CIO)
-        val response: String = client.get("https://maps.googleapis.com/maps/api/place/nearbysearch/json") {
-            url {
-                parameters.append("location", "$lat,$lng")
-                parameters.append("radius", radius.toString())
-                parameters.append("keyword", keyword)
-                parameters.append("key", apiKey)
+            val client = HttpClient(CIO)
+            val response: String = client.get("https://maps.googleapis.com/maps/api/place/nearbysearch/json") {
+                url {
+                    parameters.append("location", "$lat,$lng")
+                    parameters.append("radius", radius.toString())
+                    parameters.append("keyword", keyword)
+                    parameters.append("key", apiKey)
+                }
+            }.bodyAsText()
+            client.close()
+
+            val json = Json.parseToJsonElement(response).jsonObject
+            val results = json["results"]?.jsonArray ?: return emptyList()
+
+            return results.mapIndexed { index, element ->
+                val obj = element.jsonObject
+                val location = obj["geometry"]!!.jsonObject["location"]!!.jsonObject
+
+                ToiletModel(
+                    id = nextId++,
+                    name = obj["name"]?.jsonPrimitive?.content ?: "Unknown WC",
+                    tags = TagModel(),
+                    latitude = location["lat"]!!.jsonPrimitive.double,
+                    longitude = location["lng"]!!.jsonPrimitive.double,
+                )
             }
-        }.bodyAsText()
-        client.close()
-
-        val json = Json.parseToJsonElement(response).jsonObject
-        val results = json["results"]?.jsonArray ?: return emptyList()
-
-        return results.mapIndexed { index, element ->
-            val obj = element.jsonObject
-            val location = obj["geometry"]!!.jsonObject["location"]!!.jsonObject
-
-            ToiletModel(
-                id = nextId + index,
-                name = obj["name"]?.jsonPrimitive?.content ?: "Ismeretlen WC",
-                addDate = "",
-                latitude = location["lat"]!!.jsonPrimitive.double,
-                longitude = location["lng"]!!.jsonPrimitive.double,
-                notes = emptyList(),
-                votes = emptyList()
-            )
+        }catch (e:Exception){
+            debugLog("fetchGoogleToilets error: ${e.message}")
+            return emptyList()
         }
+
     }
 
     fun fetchToilet(id: String): ToiletModel? {
-        return toilets.find { it.id.toString() == id }
+        return try {
+            transaction{
+                toilets.find { it.id.toString() == id }
+            }
+        }catch (e:Exception){
+            debugLog("fetchGoogleToilets error: ${e.message}")
+            null
+        }
     }
 
-    fun addToilet(request: ToiletRequest, userEmail:String): ToiletModel {
-        return transaction {
-            try {
+    fun addToilet(request: ToiletRequest, userEmail: String): ToiletModel? {
+        return try {
+            transaction {
                 val toiletId = Toilet.insert {
                     it[name] = request.name
+                    it[addDate] = Instant.now()
                     it[category] = request.category
                     it[entryMethod] = request.entryMethod
                     it[priceCHF] = request.priceCHF
                     it[code] = request.code
                     it[latitude] = request.latitude
                     it[longitude] = request.longitude
-                    it[babyRoom] = request.tags.BABY_ROOM
-                    it[wheelchairAccessible] = request.tags.WHEELCHAIR_ACCESSIBLE
                 }[Toilet.id]
 
-                val userId = User
-                    .select { User.email eq userEmail }
+                Tag.insert {
+                    it[Tag.toiletId] = toiletId
+                    it[Tag.babyRoom] = request.tags?.babyRoom
+                    it[Tag.accessible] = request.tags?.accessible
+                }
+
+                val userId = User.select { User.email eq userEmail }
                     .map { it[User.id] }
                     .firstOrNull() ?: throw IllegalStateException("User not found")
 
+                val votes = mutableListOf<VoteModel>()
+                val notes = mutableListOf<NoteModel>()
 
-                if (request.vote != null && (request.vote == 1 || request.vote == -1)) {
+                if (request.vote != null) {
                     Vote.insert {
                         it[Vote.toiletId] = toiletId
                         it[Vote.userId] = userId
                         it[value] = if (request.vote > 0) 1 else -1
                     }
+                    votes.add(VoteModel(
+                        id = 0,
+                        userId = userId,
+                        toiletId = toiletId,
+                        value = request.vote
+                    ))
                 }
 
                 if (!request.note.isNullOrBlank()) {
-                    debugLog(request)
-
-                    val imageBytes: ByteArray? = request.imageBase64?.let {
+                    val imageBytes: ByteArray? = request.img?.let {
                         Base64.getDecoder().decode(it)
                     }
-
 
                     Note.insert {
                         it[Note.toiletId] = toiletId
                         it[Note.userId] = userId
                         it[note] = request.note
                         it[img] = ExposedBlob(imageBytes ?: ByteArray(0))
-                        it[addDate] = Instant.now()                 }
+                        it[addDate] = Instant.now()
+                    }
+                    notes.add(NoteModel(
+                        id = 0,
+                        userId = userId,
+                        toiletId = toiletId,
+                        note = request.note,
+                        image = imageBytes,
+                        addDate = Instant.now().toString()
+                    ))
                 }
 
                 ToiletModel(
                     id = toiletId,
                     name = request.name,
-                    addDate = request.addDate,
                     category = request.category,
-                    openHours = request.openHours,
-                    tagModel = TagModel(
-                        BABY_ROOM = request.tags.BABY_ROOM,
-                        WHEELCHAIR_ACCESSIBLE = request.tags.WHEELCHAIR_ACCESSIBLE
+                    tags = TagModel(
+                        toiletId = toiletId,
+                        babyRoom = request.tags?.babyRoom,
+                        accessible = request.tags?.accessible
                     ),
                     entryMethod = request.entryMethod,
                     priceCHF = request.priceCHF,
                     code = request.code,
                     latitude = request.latitude,
                     longitude = request.longitude,
-                    notes = emptyList(),
-                    votes = emptyList()
+                    notes = notes,
+                    votes = votes,
+                    addDate = Instant.now().toString()
                 )
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                throw e
             }
+        } catch (e: Exception) {
+            debugLog("addToilet error: ${e.message}")
+            null
         }
-
     }
 
-    fun vote(toiletID: String, userID: String, voteValue: Int): String {
-        val toilet = fetchToilet(toiletID) ?: return "Toilet not found"
-        val newVotes = toilet.votes.toMutableList()
-        val index = newVotes.indexOfFirst { it.userId == userID }
-        when {
-            index == -1 && voteValue != 0 -> newVotes.add(VoteModel(userId = userID, value = voteValue))
-            voteValue == 0 && index != -1 -> newVotes.removeAt(index)
-            index != -1 -> newVotes[index] = VoteModel(userId = userID, value = voteValue)
-        }
-        val updatedToilet = toilet.copy(votes = newVotes)
-        toilets.removeIf { it.id.toString() == toiletID }
-        toilets.add(updatedToilet)
-        return "Vote updated"
-    }
+    fun addVote(toiletID: Int, userID: Int, voteValue: Int): Boolean {
+        return try {
+            transaction {
+                val updated = Vote.update({ (Vote.toiletId eq toiletID) and (Vote.userId eq userID) }) {
+                    it[value] = voteValue
+                }
 
-    fun addNote(toiletID: String, userID: String, noteText: String, imageBytes:ByteArray): String {
-        if (noteText.length < 3) return "Note is too short!"
-
-        transaction {
-
-            Note.insert {
-                it[toiletId] = toiletID.toInt()
-                it[userId] = userID.toInt()
-                it[note] = noteText
-                it[addDate] = Instant.now()
-                it[img] = ExposedBlob(imageBytes)
+                if (updated == 0) {
+                    Vote.insert {
+                        it[Vote.toiletId] = toiletID
+                        it[Vote.userId] = userID
+                        it[value] = voteValue
+                    }
+                }
             }
+           true
+        } catch (e: Exception) {
+            debugLog("addVote error: ${e.message}")
+            false
         }
-
-        return "Note added"
     }
 
-    fun updateNote(toiletID: String, userID: String, noteText: String, imageBytes: ByteArray): String {
-        return addNote(toiletID, userID, noteText, imageBytes)
+    fun addNote(toiletID: Int, userID: Int, noteText: String, imageBytes: ByteArray? = null): Boolean {
+        return try {
+            transaction {
+                val existing = Note.select {
+                    (Note.toiletId eq toiletID) and (Note.userId eq userID)
+                }.singleOrNull()
+
+                if (existing != null) {
+                    Note.update({ (Note.toiletId eq toiletID) and (Note.userId eq userID) }) {
+                        it[note] = noteText
+                        it[addDate] = Instant.now()
+                        it[img] = imageBytes?.let { it1 -> ExposedBlob(it1) }
+                    }
+                } else {
+                    Note.insert {
+                        it[Note.toiletId] = toiletID
+                        it[Note.userId] = userID
+                        it[note] = noteText
+                        it[addDate] = Instant.now()
+                        it[img] = imageBytes?.let { it1 -> ExposedBlob(it1) }
+                    }
+                }
+            }
+           true
+        } catch (e: Exception) {
+            debugLog("addNote error: ${e.message}")
+            false
+        }
     }
 
-    fun removeNote(toiletID: String, userID: String): String {
-        val toilet = fetchToilet(toiletID) ?: return "Toilet not found"
-        val newNotes = toilet.notes.toMutableList()
-        val index = newNotes.indexOfFirst { it.userId == userID }
-        if (index != -1) {
-            newNotes.removeAt(index)
+    fun removeNote(toiletID: Int, userID: Int): Boolean {
+        return try {
+            transaction {
+                val deleted = Note.deleteWhere {
+                    (Note.toiletId eq toiletID) and (Note.userId eq userID)
+                }
+
+                if (deleted > 0) true else false
+            }
+        } catch (e: Exception) {
+            debugLog("removeNote error: ${e.message}")
+            false
         }
-        val updatedToilet = toilet.copy(notes = newNotes)
-        toilets.removeIf { it.id.toString() == toiletID }
-        toilets.add(updatedToilet)
-        return "Note removed"
     }
 
     private val logFile = File("logs/debug.log")

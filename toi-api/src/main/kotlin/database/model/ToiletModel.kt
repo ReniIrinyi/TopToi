@@ -4,16 +4,16 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ToiletModel(
-    val id: Int,
+    val id: Int?=null,
     val name: String,
-    val addDate: String,
-    val category: String?,
-    val entryMethod: String?,
-    val priceCHF: Double?,
-    val code: String?,
     val latitude: Double,
     val longitude: Double,
-    val tags: TagModel?,
+    val addDate: String? = null,
+    val entryMethod: String?="",
+    val priceCHF: Double?=0.0,
+    val code: String?="",
+    val category: String?="",
+    val tags: TagModel? = null,
     val notes: List<NoteModel> = emptyList(),
     val votes: List<VoteModel> = emptyList()
 )

@@ -15,6 +15,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import service.Service
 import util.DtoMapper.toDTO
+import java.util.*
 
 
 fun ApplicationCall.getCurrentUserEmail(): String {
@@ -41,7 +42,11 @@ fun Route.toiletRoute(service:Service){
                 val request = call.receive<ToiletRequest>()
                 val email = call.getCurrentUserEmail()
                 val newToilet = service.addToilet(request, email)
-                call.respond(HttpStatusCode.Created, newToilet)
+                if(newToilet != null){
+                    call.respond(HttpStatusCode.OK)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
         }
         authenticate("auth-jwt") {
@@ -53,8 +58,12 @@ fun Route.toiletRoute(service:Service){
                 val userID =
                     call.parameters["userID"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing userID")
                 val voteRequest = call.receive<VoteRequest>()
-                val result = service.vote(toiletID, userID, voteRequest.vote)
-                call.respondText(result)
+                val result = service.addVote(toiletID.toInt(), userID.toInt(), voteRequest.vote)
+                if(result){
+                    call.respond(HttpStatusCode.OK)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
         }
         authenticate("auth-jwt") {
@@ -66,39 +75,27 @@ fun Route.toiletRoute(service:Service){
                 val userID =
                     call.parameters["userID"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing userID")
                 val noteRequest = call.receive<NoteRequest>()
+                val imageBytes = noteRequest.image?.let { Base64.getDecoder().decode(it) } ?: ByteArray(0)
                 val result = service.addNote(
-                    toiletID, userID, noteRequest.note,
-                    imageBytes = TODO()
+                    toiletID.toInt(), userID.toInt(),noteRequest.note,imageBytes
                 )
-                call.respondText(result)
-            }
-        }
-        authenticate("auth-jwt") {
-            put("{toiletID}/notes/{userID}") {
-                val toiletID = call.parameters["toiletID"] ?: return@put call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Missing toiletID"
-                )
-                val userID =
-                    call.parameters["userID"] ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing userID")
-                val noteRequest = call.receive<NoteRequest>()
-                val result = service.updateNote(
-                    toiletID, userID, noteRequest.note,
-                    imageBytes = TODO()
-                )
-                call.respondText(result)
+                if(result){
+                    call.respond(HttpStatusCode.OK)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
         }
         authenticate("auth-jwt") {
             delete("{toiletID}/notes/{userID}") {
-                val toiletID = call.parameters["toiletID"] ?: return@delete call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Missing toiletID"
-                )
-                val userID =
-                    call.parameters["userID"] ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing userID")
+                val toiletID = call.parameters["toiletID"]?.toIntOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing or invalid toiletID")
+                val userID = call.parameters["userID"]?.toIntOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing or invalid userID")
                 val result = service.removeNote(toiletID, userID)
-                call.respondText(result)
+                if(result){
+                    call.respond(HttpStatusCode.OK)
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError)
+                }
             }
         }
     }

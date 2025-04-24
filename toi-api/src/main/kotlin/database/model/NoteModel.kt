@@ -4,10 +4,10 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class NoteModel(
-    val id: Int,
-    val toiletId: Int,
-    val userId: Int,
-    val note: String,
-    val addDate: String,
-    val image: ByteArray?
+    val id: Int?=null,
+    val toiletId: Int?=null,
+    val userId: Int?=null,
+    val note: String?="",
+    val addDate: String?=null,
+    val image: ByteArray?=null
 )
