@@ -1,19 +1,16 @@
-package database.model
+package request
 
+import dto.TagDTO
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ToiletModel(
-    val id: Int,
+data class ToiletRequest(
     val name: String,
-    val addDate: String,
     val category: String?,
     val entryMethod: String?,
     val priceCHF: Double?,
     val code: String?,
     val latitude: Double,
     val longitude: Double,
-    val tags: TagModel?,
-    val notes: List<NoteModel> = emptyList(),
-    val votes: List<VoteModel> = emptyList()
+    val tags: TagDTO
 )

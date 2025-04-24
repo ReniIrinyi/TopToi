@@ -1,10 +1,11 @@
 package routes
 
-import UserRequest
-import dto.GoogleAuthRequest
-import dto.NoteRequest
-import dto.ToiletRequest
-import dto.VoteRequest
+import request.UserRequest
+import database.model.User
+import request.GoogleAuthRequest
+import request.NoteRequest
+import request.ToiletRequest
+import request.VoteRequest
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -13,6 +14,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import service.Service
+import util.DtoMapper.toDTO
 
 
 fun ApplicationCall.getCurrentUserEmail(): String {
@@ -111,7 +113,7 @@ fun Route.toiletRoute(service:Service){
                 val user = service.getUserByEmail(request.email)
                 println(user)
 
-                call.respond(HttpStatusCode.Created, mapOf("token" to token, "data" to user))
+                call.respond(HttpStatusCode.Created, mapOf("token" to token, "data" to User))
             } else {
                 call.respond(HttpStatusCode.Conflict, "User already exists")
             }
@@ -126,7 +128,7 @@ fun Route.toiletRoute(service:Service){
                 val user = service.getUserByEmail(request.email)
                 println(user)
 
-                call.respond(HttpStatusCode.OK, mapOf("token" to token, "data" to user))
+                call.respond(HttpStatusCode.OK, mapOf("token" to token, "data" to User))
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             }
@@ -154,12 +156,17 @@ fun Route.toiletRoute(service:Service){
                     }
                 }
 
+
                 val jwtToken = service.generateJwt(email)
 
                 val user = service.getUserByEmail(email)
                 service.debugLog("here kommt userobject line 160")
                 service.debugLog(user.toString())
-                call.respond(HttpStatusCode.OK, mapOf("token" to jwtToken, "data" to user.toString() ))
+                val userDto = user?.toDTO()
+                service.debugLog(userDto ?: "")
+
+                call.respond(HttpStatusCode.OK, mapOf("token" to jwtToken, "data" to userDto ))
+
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid Google ID Token")
             }

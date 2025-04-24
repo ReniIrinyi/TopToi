@@ -3,9 +3,8 @@ package database.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class VoteModel(
-    val id: Int,
+data class TagModel(
     val toiletId: Int,
-    val userId: Int,
-    val value: Boolean
+    val babyRoom: Boolean,
+    val accessible: Boolean
 )

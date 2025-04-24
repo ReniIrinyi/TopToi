@@ -1,6 +1,6 @@
 package service
 
-import UserRequest
+import request.UserRequest
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
@@ -8,9 +8,9 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.typesafe.config.ConfigFactory
-import dto.ToiletRequest
+import request.ToiletRequest
 import database.model.NoteModel
-import database.model.Tags
+import database.model.TagModel
 import database.model.ToiletModel
 import database.model.VoteModel
 import database.table.*
@@ -83,7 +83,6 @@ class Service{
                             name = it[User.name],
                             imgUrl = it[User.imgUrl],
                             authProvider = it[User.authProvider],
-                            passwordHash = "",
                             img = imageBytes
                         )
                     } catch (e: Exception) {
@@ -200,7 +199,7 @@ class Service{
                     addDate = row[Toilet.addDate].toString(),
                     category = row[Toilet.category],
                     openHours = listOf(),
-                    tags = Tags(
+                    tagModel = TagModel(
                         BABY_ROOM = row[Toilet.babyRoom],
                         WHEELCHAIR_ACCESSIBLE = row[Toilet.wheelchairAccessible]
                     ),
@@ -309,7 +308,7 @@ class Service{
                     addDate = request.addDate,
                     category = request.category,
                     openHours = request.openHours,
-                    tags = Tags(
+                    tagModel = TagModel(
                         BABY_ROOM = request.tags.BABY_ROOM,
                         WHEELCHAIR_ACCESSIBLE = request.tags.WHEELCHAIR_ACCESSIBLE
                     ),

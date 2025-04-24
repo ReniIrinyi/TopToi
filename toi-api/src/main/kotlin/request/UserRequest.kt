@@ -1,14 +1,12 @@
+package request
+
 import database.table.AuthProvider
 import kotlinx.serialization.Serializable
-import java.sql.Blob
 
 @Serializable
 data class UserRequest(
-    val id:Int,
     val email: String,
     val password: String?,
-    val authProvider: AuthProvider,
-    val name:String,
-    val imgUrl:String?,
-    val img:ByteArray?
+    val name: String,
+    val imgUrl: String? = null
 )

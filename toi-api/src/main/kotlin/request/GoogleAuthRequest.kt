@@ -1,5 +1,5 @@
 // dto/GoogleAuthRequest.kt
-package dto
+package request
 
 import kotlinx.serialization.Serializable
 
