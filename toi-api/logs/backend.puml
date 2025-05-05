@@ -1,0 +1,32 @@
+@startuml
+skinparam sequenceMessageAlignment center
+skinparam participantPadding 20
+
+actor Client
+
+participant Routes
+participant MainController
+participant EntityRequestModel
+participant EntityInputPort
+participant EntityInteractor
+participant Repository
+participant EntityResponseModel
+participant EntityOutputPort
+participant EntityPresenter
+participant EntityViewModel
+
+Client -> Routes : send HTTP Request
+Routes -> MainController : route to Controller
+MainController -> EntityRequestModel : create RequestModel
+MainController -> EntityInputPort : call InputPort with RequestModel
+EntityInputPort -> EntityInteractor : forward RequestModel
+EntityInteractor -> Repository : request domain data
+Repository --> EntityInteractor : return domain data
+EntityInteractor -> EntityResponseModel : create ResponseModel
+EntityInteractor -> EntityOutputPort : pass ResponseModel
+EntityOutputPort -> EntityPresenter : forward to Presenter
+EntityPresenter -> EntityViewModel : create ViewModel
+EntityViewModel -> MainController : return ViewModel
+MainController -> Routes : send ViewModel response
+Routes -> Client : return HTTP Response
+@enduml

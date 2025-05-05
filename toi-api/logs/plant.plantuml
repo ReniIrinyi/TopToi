@@ -1,0 +1,35 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+' ==== Views ====
+package "View" #F5D0FF {
+
+package "Home"{
+  class HomeView
+  class UserAuthView(Reg/Login)
+  class "Header/Navigation"
+}
+
+  package "Inserat" {
+    class TaskView(Privat/Public)<Inserat>
+    class ListView<Inserat>
+  }
+
+  package "Angebot" {
+    class TaskView(Privat/Public)<Angebot>
+    class ListView<Angebot>
+   }
+
+  package "User" {
+    class UserProfilView(Privat/Public)
+        class BewertungView(Privat/Public)
+        class ListView<Bewertung>
+  }
+}
+
+HomeView ---> Inserat
+HomeView ---> Angebot
+HomeView ---> User
+
+
+@enduml

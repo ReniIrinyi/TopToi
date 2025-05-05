@@ -1,0 +1,68 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype ortho
+actor "User"
+
+' ==== Entities ====
+package "Entities (User, Inserat, Angebot)" #DDFFDD {
+}
+' ==== Interface-Adapters ====
+
+  package "View" #CCCCCC {
+  }
+
+  package "View Model" #FFFFCC {
+  }
+  package "Presenter" #CCE5FF {
+  }
+  package "Request" #FFFFCC {
+  }
+  package "Controller" #CCE5FF {
+  }
+
+ package " " {
+   package "responseModel (User, Angebot, Inserat)" {
+   }
+   interface "output Port (User, Angebot, Inserat)"
+
+   package "UseCase Interactor (User, Angebot, Inserat)" {
+   }
+   interface "input Port (User, Angebot, Inserat)"
+
+   package "requestModel (User, Angebot, Inserat)" {
+   }
+ }
+
+
+
+"User".>View
+View--->"User"
+
+View -.> Request
+"View Model" -> "View"
+View -.> "View Model"
+
+Presenter --> "View Model"
+"View Model" -.> Presenter
+
+Request -.> Controller
+
+Controller -> "input Port (User, Angebot, Inserat)"
+Controller -.> "requestModel (User, Angebot, Inserat)"
+
+Presenter -.>"output Port (User, Angebot, Inserat)"
+"output Port (User, Angebot, Inserat)" ->Presenter
+Presenter -.> "responseModel (User, Angebot, Inserat)"
+
+
+"requestModel (User, Angebot, Inserat)" -> "input Port (User, Angebot, Inserat)"
+"input Port (User, Angebot, Inserat)"  ->"UseCase Interactor (User, Angebot, Inserat)"
+"UseCase Interactor (User, Angebot, Inserat)" --->"Entities (User, Inserat, Angebot)"
+
+"UseCase Interactor (User, Angebot, Inserat)" -> "output Port (User, Angebot, Inserat)"
+"output Port (User, Angebot, Inserat)" -> "responseModel (User, Angebot, Inserat)"
+
+
+
+@enduml

@@ -1,7 +1,16 @@
+import adapter.persistence.database.repository.NoteRepository
+import adapter.persistence.database.repository.ToiletRepository
+import adapter.persistence.database.repository.UserRepository
+import adapter.persistence.database.repository.VoteRepository
+import adapter.routes.configureRouting
+import application.interactor.NoteInteractor
+import application.interactor.ToiletInteractor
+import application.interactor.UserInteractor
+import application.interactor.VoteInteractor
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import database.DatabaseConfig
+import config.DatabaseConfig
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -11,9 +20,6 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.cors.routing.*
-import io.ktor.server.routing.*
-import routes.toiletRoute
-import service.Service
 import java.io.File
 
 fun main() {
@@ -53,10 +59,17 @@ fun main() {
             allowCredentials = true
         }
         DatabaseConfig.init(this)
-        val toiletService = Service()
-        routing {
-            toiletRoute(toiletService)
-        }
+        val userInteractor = UserInteractor(UserRepository())
+        val toiletInteractor = ToiletInteractor(ToiletRepository())
+        val noteInteractor = NoteInteractor(NoteRepository())
+        val voteInteractor = VoteInteractor(VoteRepository())
+
+        configureRouting(
+            userInteractor,
+            toiletInteractor,
+            noteInteractor,
+            voteInteractor
+        )
         println("server is running")
     }.start(wait = true)
 }

@@ -1,6 +1,10 @@
 package service
 
-import request.UserRequest
+import adapter.database.table.*
+import adapter.persistence.database.repository.table.*
+import adapter.persistence.database.table.*
+import adapter.table.*
+import application.request.UserRequest
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken
@@ -8,11 +12,11 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.typesafe.config.ConfigFactory
-import request.ToiletRequest
-import database.model.NoteModel
-import database.model.TagModel
-import database.model.ToiletModel
-import database.model.VoteModel
+import application.request.ToiletRequest
+import domain.model.NoteModel
+import domain.model.TagModel
+import domain.model.ToiletModel
+import domain.model.VoteModel
 import database.table.*
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -25,6 +29,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
+import persistence.database.table.*
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -87,7 +92,7 @@ class Service{
         }
     }
 
-    fun getUserByEmail(email: String): database.model.User? {
+    fun getUserByEmail(email: String): domain.model.UserModel? {
         return try {
             transaction {
                 User.select { User.email eq email }
@@ -114,11 +119,11 @@ class Service{
                             )
                         }
 
-                        database.model.User(
+                        domain.model.UserModel(
                             id = userId,
                             email = it[User.email],
                             name = it[User.name] ?: "",
-                            authProvider = it[User.authProvider],
+                            authProvider = it[User.authProvider].toString(),
                             imgUrl = it[User.imgUrl],
                             img = it[User.img]?.bytes,
                             notes = notes,
@@ -145,6 +150,7 @@ class Service{
 
 
     fun verifyGoogleIdToken(idToken: String): GoogleIdToken? {
+        debugLog("here");
         try {
             val verifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(listOf("1030506683349-q6dlqpqbpt54qhsr4v96r1npo02v9k6l.apps.googleusercontent.com"))
@@ -359,12 +365,14 @@ class Service{
                         it[Vote.userId] = userId
                         it[value] = if (request.vote > 0) 1 else -1
                     }
-                    votes.add(VoteModel(
+                    votes.add(
+                        VoteModel(
                         id = 0,
                         userId = userId,
                         toiletId = toiletId,
                         value = request.vote
-                    ))
+                    )
+                    )
                 }
 
                 if (!request.note.isNullOrBlank()) {
@@ -379,14 +387,16 @@ class Service{
                         it[img] = ExposedBlob(imageBytes ?: ByteArray(0))
                         it[addDate] = Instant.now()
                     }
-                    notes.add(NoteModel(
+                    notes.add(
+                        NoteModel(
                         id = 0,
                         userId = userId,
                         toiletId = toiletId,
                         note = request.note,
                         image = imageBytes,
                         addDate = Instant.now().toString()
-                    ))
+                    )
+                    )
                 }
 
                 ToiletModel(

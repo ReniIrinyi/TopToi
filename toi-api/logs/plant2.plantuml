@@ -1,0 +1,107 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' ===== Frontend – View réteg =====
+package "Frontend · View (Vue.js)" {
+    LoginView.vue
+    RegisterView.vue
+    HomeView.vue
+    ProfileView.vue
+    AdvertisementListView.vue
+    AdvertisementDetailView.vue
+    MessagesView.vue
+}
+
+' ===== Frontend – Service réteg =====
+package "Frontend · Service" {
+    class ApiService
+}
+
+' ===== Backend – Controller réteg =====
+package "Backend · Controller (Ktor)" {
+    class UserController
+    class AdvertisementController
+    class OfferController
+    class RatingController
+    class MessageController
+}
+
+' ===== Backend – Service réteg =====
+package "Backend · Business Service" {
+    class UserService
+    class AdvertisementService
+    class OfferService
+    class RatingService
+    class MessageService
+}
+
+' ===== Backend – Repository réteg =====
+package "Backend · Repository" {
+    interface UserRepository
+    class UserRepositoryImpl
+    interface AdvertisementRepository
+    class AdvertisementRepositoryImpl
+    interface OfferRepository
+    class OfferRepositoryImpl
+    interface RatingRepository
+    class RatingRepositoryImpl
+    interface MessageRepository
+    class MessageRepositoryImpl
+}
+
+' ===== Domain Model =====
+package "Domain Model (Entities)" {
+    class User
+    class Advertisement
+    class Offer
+    class Rating
+    class Message
+    enum OfferStatus
+}
+
+' ---------- Frontend kapcsolatok ----------
+LoginView.vue               --> ApiService
+RegisterView.vue           --> ApiService
+HomeView.vue                --> ApiService
+ProfileView.vue         --> ApiService
+AdvertisementListView.vue   --> ApiService
+AdvertisementDetailView.vue --> ApiService
+MessagesView.vue            --> ApiService
+
+' API-wrapper → Backend Controller
+ApiService --> UserController              : /api/users…
+ApiService --> AdvertisementController     : /api/ads…
+ApiService --> OfferController             : /api/offers…
+ApiService --> RatingController            : /api/ratings…
+ApiService --> MessageController           : /api/messages…
+
+' ---------- Backend kapcsolatok ----------
+UserController          --> UserService
+AdvertisementController --> AdvertisementService
+OfferController         --> OfferService
+RatingController        --> RatingService
+MessageController       --> MessageService
+
+UserService          --> UserRepository
+AdvertisementService --> AdvertisementRepository
+OfferService         --> OfferRepository
+RatingService        --> RatingRepository
+MessageService       --> MessageRepository
+
+UserRepository         <|-- UserRepositoryImpl
+AdvertisementRepository <|-- AdvertisementRepositoryImpl
+OfferRepository        <|-- OfferRepositoryImpl
+RatingRepository       <|-- RatingRepositoryImpl
+MessageRepository      <|-- MessageRepositoryImpl
+
+' ---------- Entitás-kapcsolatok (tömören) ----------
+User          "1" -- "0..*" Advertisement
+Advertisement "1" -- "0..*" Offer
+User          "1" -- "0..*" Offer
+User          "1" <-- "0..*" Rating
+User          "1" -- "0..*" Message
+User          "1" <-- "0..*" Message
+
+@enduml

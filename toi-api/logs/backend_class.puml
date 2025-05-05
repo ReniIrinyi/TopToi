@@ -1,0 +1,41 @@
+
+@startuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+left to right direction
+
+package "Application / Usecases" {
+  interface EntityInputPort
+  interface EntityOutputPort
+
+  class EntityInteractor
+
+  class EntityRequestModel
+  class EntityResponseModel
+}
+
+package "Interface Adapters" {
+  class MainController
+  class EntityPresenter
+  class EntityViewModel
+}
+
+package "Domain" {
+  interface Repository
+}
+
+package "Infrastructure (DB)" {
+  class RepositoryImpl
+}
+
+EntityInputPort <|-- EntityInteractor
+EntityInteractor --> Repository
+Repository <|-- RepositoryImpl
+EntityInteractor --> EntityResponseModel
+EntityInteractor --> EntityOutputPort
+EntityOutputPort <|-- EntityPresenter
+EntityPresenter --> EntityViewModel
+MainController --> EntityInputPort
+EntityInputPort --> EntityInteractor
+
+@enduml
